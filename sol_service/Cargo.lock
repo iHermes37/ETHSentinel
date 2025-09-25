@@ -2493,9 +2493,9 @@ dependencies = [
 
 [[package]]
 name = "portable-atomic"
-version = "1.7.0"
+version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da544ee218f0d287a911e9c99a39a8c9bc8fcad3cb8db5959940044ecfc67265"
+checksum = "f84267b20a16ea918e43c6a88433c2d54fa145c92a811b5b047ccbe153674483"
 
 [[package]]
 name = "potential_utf"
@@ -3286,6 +3286,7 @@ name = "sol-backend"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "anyhow",
  "crossbeam-channel",
  "futures-util",
  "reqwest",
@@ -3293,6 +3294,7 @@ dependencies = [
  "serde_json",
  "solana-account-decoder",
  "solana-client",
+ "solana-commitment-config",
  "solana-sdk",
  "solana-transaction-status",
  "tokio",
