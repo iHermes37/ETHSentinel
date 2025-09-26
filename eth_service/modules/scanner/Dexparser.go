@@ -1,4 +1,4 @@
-package parser
+package scanner
 
 import (
 	"context"
@@ -129,7 +129,7 @@ func ParseUniswapV2(tx types.Transaction, cli *ethclient.Client) models.DeFiTxDe
 			}
 		}
 
-		d.Exchange = "UniswapV2"
+		d.Exchange = "UniswapV2Protocol"
 		d.Direction = models.TxDirectionOut // 假设是用户主动 swap
 	}
 	return d

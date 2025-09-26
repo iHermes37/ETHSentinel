@@ -20,7 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// 2. UniswapV2 Pair 合约地址
+	// 2. UniswapV2Protocol Pair 合约地址
 	pairAddress := common.HexToAddress("0x...") // 替换为 Pair 地址
 
 	// 3. Pair ABI 中 getReserves 函数定义
