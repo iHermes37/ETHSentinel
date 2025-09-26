@@ -1,2 +1,2 @@
-pub mod eventTypes;
+pub mod event_types;
 pub mod chainlog;

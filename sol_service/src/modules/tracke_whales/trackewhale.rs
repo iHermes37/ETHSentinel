@@ -5,8 +5,8 @@ use tokio_tungstenite::{
 use futures_util::{SinkExt};
 
 use crate::initialize::connect::ws_connect; 
-use crate::models::notification::eventTypes::SolEventTypes;
-use crate::utils::WsStreamTrans::streamMapORM;
+use crate::models::notification::event_types::SolEventTypes;
+use crate::util::ws_stream_trans::stream_maporm;
 
 pub async fn monit_whale()-> Result<(), Box<dyn std::error::Error>>{
 
@@ -38,15 +38,15 @@ pub async fn monit_whale()-> Result<(), Box<dyn std::error::Error>>{
 
 
         //对websocket接受到的消息进行预处理映射
-        let ws_message_preprocess =tokio::spawn(async move||{
-            streamMapORM::<SolEventTypes>(&mut ws_stream,sender).await;
+        let ws_message_preprocess =tokio::spawn(async move{
+            stream_maporm::<SolEventTypes>(&mut ws_stream,sender).await;
         });
 
         //处理订阅的消息
         let handle_event=tokio::spawn(async move {
             while let Ok(event)=receiver.recv(){
                     match event{
-                        SolEventTypes::LogNotification(ref log){
+                        SolEventTypes::LogNotification(ref log)=>{
 
                         }
                     }
@@ -58,8 +58,14 @@ pub async fn monit_whale()-> Result<(), Box<dyn std::error::Error>>{
             ws_message_preprocess,
             handle_event
         ) {
-            Ok(_) => println!("All tasks completed successfully"),
-            Err(e) => eprintln!("A task exited with an error: {:?}", e),
+            Ok(_) => {
+                println!("All tasks completed successfully");
+                Ok(())
+            },
+            Err(e) => {
+                eprintln!("A task exited with an error: {:?}", e);
+                Err(Box::new(e))
+            },
         }
 
 }
