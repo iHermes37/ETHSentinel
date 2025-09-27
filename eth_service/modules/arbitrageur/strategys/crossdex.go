@@ -7,8 +7,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/CryptoQuantX/chain_monitor/initialize"
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/initialize"
+	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"

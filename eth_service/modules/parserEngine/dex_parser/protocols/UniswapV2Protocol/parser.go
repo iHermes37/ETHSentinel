@@ -1,27 +1,32 @@
 package UniswapV2Protocol
 
 import (
-	abligens "github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/abigens"
-	dexcommon "github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/common"
+	"fmt"
+	abligens "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/abigens"
+	dexcommon "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var Configs = []dexcommon.EventParseConfig{
-	{
-		ContractAddress: UniswapV2_Address[0], // UniswapV2Protocol pair
-		Protocol:        dexcommon.UniswapV2,
-		EventType:       dexcommon.UniswapV2_SwapBuy,
-		Parser:          ParseSwapEvent,
-	},
+var UniswapV2EventsConfig = map[dexcommon.EventSig]dexcommon.EventParserFunc{
+	dexcommon.UniswapV2_Swap: ParseSwapEvent,
 }
 
-var UniswapV2_Address = []common.Address{
-	common.HexToAddress("0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"),
-	common.HexToAddress("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"),
+// USDC/WETH: 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc
+// DAI/WETH: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
+// USDT/WETH: 0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852
+var ContractAddress = map[common.Address]dexcommon.Protocol{
+	common.HexToAddress("0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"): dexcommon.UniswapV2,
+	common.HexToAddress("0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11"): dexcommon.UniswapV2,
+	common.HexToAddress("0x0d4a11d5EEaaC28EC3F61d100daF4d40471f1852"): dexcommon.UniswapV2,
 }
 
 func ParseSwapEvent(log types.Log, metadata dexcommon.EventMetadata, filterer *abligens.UniswappairFilterer) (dexcommon.UnifiedEvent, error) {
+	if filterer == nil {
+		return nil, fmt.Errorf("filterer 未初始化")
+	}
+
+	fmt.Printf("hhhhhhhhhh,success")
 	swapEvent, err := filterer.ParseSwap(log)
 	if err != nil {
 		return nil, err

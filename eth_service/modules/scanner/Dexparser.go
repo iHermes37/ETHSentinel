@@ -3,9 +3,9 @@ package scanner
 import (
 	"context"
 	"fmt"
-	"github.com/CryptoQuantX/chain_monitor/initialize"
-	"github.com/CryptoQuantX/chain_monitor/models"
-	"github.com/CryptoQuantX/chain_monitor/utils"
+	"github.com/Crypto-ChainSentinel/initialize"
+	"github.com/Crypto-ChainSentinel/models"
+	"github.com/Crypto-ChainSentinel/utils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"

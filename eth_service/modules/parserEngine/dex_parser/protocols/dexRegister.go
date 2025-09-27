@@ -1,45 +1,32 @@
 package protocols
 
 import (
-	dexcommon "github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/common"
-	"github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/protocols/UniswapV2Protocol"
+	dexcommon "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
+	"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols/UniswapV2Protocol"
 	"github.com/ethereum/go-ethereum/common"
-	"strings"
 	"sync"
 )
 
-// 通过字符串解析协议
-func GetProtocolAddr(s string) []common.Address {
-	switch strings.ToLower(s) {
-	case "uniswapv2":
-		return UniswapV2Protocol.UniswapV2_Address
-	//case "sushiswap":
-	//	return Sushiswap, nil
-	//case "curve":
-	//	return Curve, nil
-	default:
-		return nil
-	}
-}
-
-// 封装每个协议的配置
-type ProtocolParsers struct {
-	Addr    []common.Address
-	Configs []dexcommon.EventParseConfig
+// 封装每个协议的配置(该协议的所有pair地址【找到对应的协议】+该协议所有的解析器配置)
+type ProtocolParser struct {
+	protocolName  dexcommon.Protocol
+	ContractAddrs map[common.Address]dexcommon.Protocol
+	Configs       map[dexcommon.EventSig]dexcommon.EventParserFunc
 }
 
 var (
-	DEXParseConfigManager map[dexcommon.Protocol]ProtocolParsers
+	DEXParseConfigManager map[dexcommon.Protocol]ProtocolParser
 	once                  sync.Once
 )
 
 func InitEventConfig() {
 	once.Do(func() {
-		DEXParseConfigManager = make(map[dexcommon.Protocol]ProtocolParsers)
+		DEXParseConfigManager = make(map[dexcommon.Protocol]ProtocolParser)
 		// UniswapV2Protocol
-		DEXParseConfigManager[dexcommon.UniswapV2] = ProtocolParsers{
-			Addr:    GetProtocolAddr("UniswapV2"),
-			Configs: UniswapV2Protocol.Configs,
+		DEXParseConfigManager[dexcommon.UniswapV2] = ProtocolParser{
+			dexcommon.UniswapV2,
+			UniswapV2Protocol.ContractAddress,
+			UniswapV2Protocol.UniswapV2EventsConfig,
 		}
 	},
 	)

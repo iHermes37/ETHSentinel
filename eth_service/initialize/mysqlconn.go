@@ -1,7 +1,7 @@
 package initialize
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/models"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"

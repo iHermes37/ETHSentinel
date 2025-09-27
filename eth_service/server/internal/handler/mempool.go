@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/server/internal/service"
+	"github.com/Crypto-ChainSentinel/server/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

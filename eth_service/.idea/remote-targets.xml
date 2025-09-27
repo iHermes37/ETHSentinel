@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="chainserver@192.168.108.153:22" type="ssh/sftp" uuid="3c1c28a2-4943-4e79-8797-03164065c60a">
+        <config>
+          <option name="projectRootOnTarget" value="$USER_HOME$/eth_service" />
+          <option name="serverName" value="chainserver@192.168.108.153:22 password" />
+          <option name="useRsync" value="true" />
+        </config>
+        <ContributedStateBase type="GoLanguageRuntime">
+          <config />
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

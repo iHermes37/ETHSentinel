@@ -1,15 +1,51 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	dexcommon "github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/common"
-	dexcore "github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/core"
-	"github.com/CryptoQuantX/chain_monitor/modules/parserEngine/dex_parser/protocols"
+	"github.com/Crypto-ChainSentinel/modules/connectionManager"
+	dexcore "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser"
+	abligens "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/abigens"
+	dexcommon "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
+	"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols"
+
+	//"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"log"
+
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+func cal() {
+	// 事件签名字符串
+	eventSig := "Transfer(address,address,uint256)"
+	// 计算 Keccak256 哈希
+	hash := crypto.Keccak256Hash([]byte(eventSig))
+	fmt.Println(hash.Hex()) // 这就是 topics[0]
+}
+
+func GetEthBlock() *types.Block {
+	ethClient := connectionManager.InfuraConn()
+
+	header, err := ethClient.HeaderByNumber(context.Background(), nil)
+	if err != nil {
+		log.Fatalf("获取最新区块失败: %v", err)
+	}
+
+	block, err := ethClient.BlockByNumber(context.Background(), header.Number)
+	if err != nil {
+		log.Fatalf("获取区块失败: %v", err)
+	}
+
+	log.Println("获取区块成功")
+	log.Println(block.Hash)
+
+	return block
+}
 
 // 模拟 EventMetadata
 // mockMetadata 模拟 EventMetadata
@@ -65,6 +101,10 @@ func TestUniswapV2SwapParsing() {
 
 	// 3. 初始化解析器
 	parser.NewDexEventParser(needDexs, needEvent)
+	client, err := ethclient.Dial("https://mainnet.infura.io/v3/0d79a9c32c814e1da6133850f6fa1128")
+	if err != nil {
+		panic(err)
+	}
 
 	// 4. 遍历配置并调用解析函数
 	for dex, configGroup := range parser.EventConfigs {
@@ -73,7 +113,14 @@ func TestUniswapV2SwapParsing() {
 			log := mockLog(cfg.ContractAddress)
 			metadata := mockMetadata()
 
-			event, err := cfg.Parser(log, metadata, nil) // abligens 这里暂时传 nil
+			// 这里初始化 filterer
+			filterer, err := abligens.NewUniswappairFilterer(cfg.ContractAddress, client)
+			if err != nil {
+				fmt.Printf("filterer 初始化失败: %v\n", err)
+				continue
+			}
+
+			event, err := cfg.Parser(log, metadata, filterer) // abligens 这里暂时传 nil
 			if err != nil {
 				fmt.Printf("解析失败: %+v\n", event)
 			} else {
@@ -84,5 +131,8 @@ func TestUniswapV2SwapParsing() {
 }
 
 func main() {
-	TestUniswapV2SwapParsing()
+	//TestUniswapV2SwapParsing()
+	//block := GetEthBlock()
+	//commonParser.ParseBlock(block)
+	cal()
 }

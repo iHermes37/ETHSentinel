@@ -1,8 +1,8 @@
 package arbitragur
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/db"
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/db"
+	"github.com/Crypto-ChainSentinel/models"
 	"strings"
 )
 

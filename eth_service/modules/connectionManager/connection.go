@@ -1,4 +1,4 @@
-package initialize
+package connectionManager
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -12,7 +12,9 @@ import (
 	"net/url"
 )
 
-func InfuraConn(rpcURL string, proxyStr string) *ethclient.Client {
+func InfuraConn() *ethclient.Client {
+	rpcURL := "https://mainnet.infura.io/v3/0d79a9c32c814e1da6133850f6fa1128"
+	proxyStr := "http://192.168.150.215:7890"
 	proxyURL, err := url.Parse(proxyStr)
 	if err != nil {
 		log.Fatalf("代理地址解析失败: %v", err)

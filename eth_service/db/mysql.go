@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/initialize"
+	"github.com/Crypto-ChainSentinel/initialize"
 	"log"
 )
 

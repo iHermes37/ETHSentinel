@@ -3,7 +3,7 @@ package parser
 import (
 	"context"
 	"fmt"
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

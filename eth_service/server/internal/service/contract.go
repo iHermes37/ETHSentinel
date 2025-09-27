@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/server/internal/model"
-	"github.com/CryptoQuantX/chain_monitor/server/internal/repository"
+	"github.com/Crypto-ChainSentinel/server/internal/model"
+	"github.com/Crypto-ChainSentinel/server/internal/repository"
 )
 
 type ContractService struct {

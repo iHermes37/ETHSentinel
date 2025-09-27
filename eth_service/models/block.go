@@ -2,7 +2,7 @@ package models
 
 import (
 	"context"
-	"github.com/CryptoQuantX/chain_monitor/initialize"
+	"github.com/Crypto-ChainSentinel/modules/connectionManager"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -24,8 +24,8 @@ type BlockHeader struct {
 	Number      *big.Int
 }
 
-func (b *BlockStruct) ParseEthBlock() (*BlockStruct, *ethclient.Client) {
-	ethClient := initialize.InfuraConn("https://mainnet.infura.io/v3/0d79a9c32c814e1da6133850f6fa1128", "http://192.168.248.215:7890")
+func (b *BlockStruct) GetEthBlock() (*BlockStruct, *ethclient.Client) {
+	ethClient := connectionManager.InfuraConn()
 
 	header, err := ethClient.HeaderByNumber(context.Background(), nil)
 	if err != nil {
@@ -44,6 +44,7 @@ func (b *BlockStruct) ParseEthBlock() (*BlockStruct, *ethclient.Client) {
 		log.Fatalf("获取区块失败: %v", err)
 	}
 
+	log.Println("获取区块成功")
 	b.Transactions = block.Transactions()
 
 	return b, ethClient

@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/db"
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/db"
+	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )

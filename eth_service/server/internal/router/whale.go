@@ -1,7 +1,7 @@
 package router
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/server/internal/handler"
+	"github.com/Crypto-ChainSentinel/server/internal/handler"
 	"github.com/gin-gonic/gin"
 )
 

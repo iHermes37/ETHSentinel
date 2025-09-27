@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/CryptoQuantX/chain_monitor/initialize"
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/initialize"
+	"github.com/Crypto-ChainSentinel/models"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 

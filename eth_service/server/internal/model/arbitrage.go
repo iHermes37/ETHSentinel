@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/models"
+	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"time"

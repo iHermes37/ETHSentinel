@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"github.com/CryptoQuantX/chain_monitor/initialize"
-	"github.com/CryptoQuantX/chain_monitor/models"
-	"github.com/CryptoQuantX/chain_monitor/server/internal/model"
+	"github.com/Crypto-ChainSentinel/initialize"
+	"github.com/Crypto-ChainSentinel/models"
+	"github.com/Crypto-ChainSentinel/server/internal/model"
 	"gorm.io/gorm"
 )
 

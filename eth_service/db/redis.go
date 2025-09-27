@@ -1,6 +1,6 @@
 package db
 
-import "github.com/CryptoQuantX/chain_monitor/models"
+import "github.com/Crypto-ChainSentinel/models"
 
 func AddContract(c *models.ConstractInfo) {
 
