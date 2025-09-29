@@ -19,7 +19,7 @@ var (
 	once                  sync.Once
 )
 
-func InitEventConfig() {
+func InitDexParserConfig() {
 	once.Do(func() {
 		DEXParseConfigManager = make(map[dexcommon.Protocol]ProtocolParser)
 		// UniswapV2Protocol

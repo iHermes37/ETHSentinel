@@ -8,8 +8,10 @@ import (
 	abligens "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/abigens"
 	dexcommon "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
 	"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 
-	//"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols"
+	//"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/ERC"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
@@ -130,9 +132,53 @@ func TestUniswapV2SwapParsing() {
 	}
 }
 
+func findmempool() {
+	// 使用 WebSocket 连接节点
+	client, err := rpc.Dial("wss://mainnet.infura.io/ws/v3/YOUR_INFURA_KEY")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gc := gethclient.New(rc)
+
+	transactions := make(chan *types.Transaction, 100)
+	pendingTransactions, err := gc.SubscribeFullPendingTransactions(context.Background(), transactions)
+	if err != nil {
+		return
+	}
+
+	for tx := range transactions {
+		txBytes, _ := tx.MarshalJSON()
+		log.Printf("Received tx: %s", string(txBytes))
+	}
+
+	// 创建 channel 接收交易哈希
+	txHashes := make(chan string)
+
+	// 使用 Subscribe 方法订阅 newPendingTransactions
+	sub, err := client.Subscribe(context.Background(), "eth", txHashes, "newPendingTransactions")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("✅ 已订阅 pending transactions...")
+
+	// 循环监听
+	for {
+		select {
+		case err := <-sub.Err():
+			log.Println("订阅错误:", err)
+		case txHash := <-txHashes:
+			fmt.Println("Pending Tx Hash:", txHash)
+			// 如果需要完整交易对象，可用 ethclient.TransactionByHash 查询
+		}
+	}
+
+}
+
 func main() {
 	//TestUniswapV2SwapParsing()
 	//block := GetEthBlock()
 	//commonParser.ParseBlock(block)
-	cal()
+	//cal()
 }

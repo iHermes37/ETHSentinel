@@ -1,11 +1,11 @@
-package commonParser
+package scanner
 
 //
 //import (
 //	"bytes"
 //	"encoding/json"
 //	"fmt"
-//	"github.com/ethereum/go-ethereum/common"
+//	"github.com/ethereum/go-ethereum/erccommon"
 //	"github.com/ethereum/go-ethereum/core/types"
 //	"github.com/ethereum/go-ethereum/crypto"
 //	"github.com/ethereum/go-ethereum/ethclient"
@@ -16,7 +16,7 @@ package commonParser
 //	"strings"
 //)
 //
-//func IsWhale(addr common.Address) bool {
+//func IsWhale(addr erccommon.Address) bool {
 //	_,data:=os.ReadFile("")
 //
 //	var raw map[srting]interface{}
@@ -31,7 +31,7 @@ package commonParser
 //	}
 //}
 //
-//func IsCEX(to *common.Address) (bool, string) {
+//func IsCEX(to *erccommon.Address) (bool, string) {
 //
 //	_, data := os.ReadFile("")
 //
@@ -107,7 +107,7 @@ package commonParser
 //	}
 //}
 //
-//func Parsefrom(cli *ethclient.Client, tx *types.Transaction) common.Address {
+//func Parsefrom(cli *ethclient.Client, tx *types.Transaction) erccommon.Address {
 //	chainID, _ := cli.NetworkID(context.Background())
 //	signer := types.LatestSignerForChainID(chainID)
 //	from, err := types.Sender(signer, tx)
@@ -120,7 +120,7 @@ package commonParser
 //	return from
 //}
 //
-//func GetNewContractAddr(sender common.Address, nonce uint64) common.Address {
+//func GetNewContractAddr(sender erccommon.Address, nonce uint64) erccommon.Address {
 //
 //	// RLP 编码 [sender, nonce]
 //	rlpStream, err := rlp.EncodeToBytes([]interface{}{sender, nonce})
@@ -132,6 +132,6 @@ package commonParser
 //	hash := crypto.Keccak256(rlpStream)
 //
 //	// 取最后 20 字节
-//	return common.BytesToAddress(hash[12:])
+//	return erccommon.BytesToAddress(hash[12:])
 //
 //}
