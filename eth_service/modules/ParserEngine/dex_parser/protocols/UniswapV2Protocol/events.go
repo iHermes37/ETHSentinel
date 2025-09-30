@@ -1,8 +1,8 @@
 package UniswapV2Protocol
 
 import (
-	abligens "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/abigens"
-	"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
+	abligens "github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/abigens"
+	"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/common"
 )
 
 type UniswapV2_SwapEvent struct {

@@ -1,6 +1,15 @@
-//package monitor
+package scanner
+
+import (
+	"fmt"
+	"github.com/Crypto-ChainSentinel/modules/ParserEngine"
+	"github.com/Crypto-ChainSentinel/modules/connectionManager"
+	"github.com/ethereum/go-ethereum/core/types"
+	"sync"
+)
+
+// import (
 //
-//import (
 //	"fmt"
 //	"github.com/Crypto-ChainSentinel/models"
 //	handle "github.com/Crypto-ChainSentinel/modules"
@@ -8,9 +17,10 @@
 //	"github.com/ethereum/go-ethereum/ethclient"
 //	"log"
 //	"math/big"
-//)
 //
-//func Monitor(recvblock *models.BlockStruct, cli *ethclient.Client) {
+// )
+//
+// func Monitor(recvblock *models.BlockStruct, cli *ethclient.Client) {
 //
 //	threshold := new(big.Int)
 //	threshold.SetString("50000000000000000000", 10) // 50 ETH (单位: wei)
@@ -72,4 +82,72 @@
 //
 //	}
 //
-//}
+// }
+
+type config struct {
+}
+
+type scanner interface {
+	ScanBlock(block types.Block)
+	ScanTx(tx types.Transaction)
+	Getconfig(config config)
+}
+
+type Whalehunter struct {
+	amount  int
+
+}
+
+func (wh *Whalehunter)ScanTx(tx types.Transaction) string{
+	client:=connectionManager.InfuraConn()
+	receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
+	parser:=ParserEngine.CreateParser()
+
+	//针对大额dex交易
+	result:=parser.DexParser().ParseTran(receipt)
+	if result.amont>wh.amount{
+	//	发现巨鲸
+	}
+
+	
+}
+
+func (wh *Whalehunter)ScanBlock(block types.Block){
+
+	txs:=block.Transactions()
+	txCh := make(chan types.Transaction, len(txs))
+	resultCh := make(chan string, len(txs))
+
+	for _, tx := range txs {
+		txCh <- *tx
+	}
+	close(txCh)
+
+	var wg sync.WaitGroup
+	workerCount := 10
+
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for tx := range txCh {
+				result := wh.ScanTx(tx)
+				resultCh <- result
+			}
+		}()
+	}
+
+
+	wg.Wait()
+	close(resultCh)
+
+	// 收集结果
+	for res := range resultCh {
+		fmt.Println(res)
+	}
+}
+
+func
+
+type GoldMiniter struct {
+}

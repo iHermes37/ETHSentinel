@@ -3,8 +3,8 @@ package dex_parser
 import (
 	"encoding/json"
 	"fmt"
-	dexcommon "github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/common"
-	"github.com/Crypto-ChainSentinel/modules/parserEngine/dex_parser/protocols"
+	dexcommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/common"
+	"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/protocols"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -16,7 +16,7 @@ type MyEventParser struct {
 	//mu                sync.Mutex
 }
 
-func (myparser MyEventParser) NewDexEventParser(needDexs []dexcommon.Protocol, needEvent dexcommon.EventFilter) {
+func (myparser MyEventParser) NewParser(needDexs []dexcommon.Protocol, needEvent dexcommon.EventFilter) {
 	for _, dex := range needDexs {
 		var dexparser = protocols.DEXParseConfigManager[dex]
 
@@ -40,11 +40,10 @@ func (myparser MyEventParser) NewDexEventParser(needDexs []dexcommon.Protocol, n
 
 		if len(filteredConfigs) > 0 {
 			myparser.EventConfigs[dex] = protocols.ProtocolParser{
-				ContractAddrs: dexparser.ContractAddrs,
+				ProtocolAddrs: dexparser.ProtocolAddrs,
 				Configs:       filteredConfigs,
 			}
 		}
-
 		b, _ := json.MarshalIndent(myparser, "", "  ")
 		fmt.Println(string(b))
 	}
@@ -64,19 +63,20 @@ func (myparser MyEventParser) ParseTran(tranreceipt *types.Receipt) {
 
 func (myparser MyEventParser) ParseLog(log *types.Log, metadata *dexcommon.EventMetadata) dexcommon.UnifiedEvent {
 	metadata.OuterIndexVal = log.Index
+	//client := connectionManager.InfuraConn()
 	myparser.ContractAddresses = append(myparser.ContractAddresses, log.Address)
 
 	// 1. 遍历所有协议
 	for _, parser := range myparser.EventConfigs {
 		// 2. 检查日志地址是否属于该协议
-		if _, ok := parser.ContractAddrs[log.Address]; !ok {
+		if _, ok := parser.ProtocolAddrs[log.Address]; !ok {
 			continue
 		}
 		// 3. 遍历该协议的事件配置
 		for sig, parserFunc := range parser.Configs {
 			if common.Hash(sig) == log.Topics[0] {
 				//通过 Topic[0] 判断事件类型 ,假设 Parser 内部可以处理 topic 校验
-				unifiedEvent, err := parserFunc(*log, *metadata, nil)
+				unifiedEvent, err := parserFunc(*log, *metadata)
 				if err != nil {
 					continue
 				}

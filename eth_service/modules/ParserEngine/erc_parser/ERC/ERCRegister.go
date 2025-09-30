@@ -1,7 +1,7 @@
 package ERC
 
 import (
-	"github.com/Crypto-ChainSentinel/modules/parserEngine/erc_parser/erccommon"
+	"github.com/Crypto-ChainSentinel/modules/ParserEngine/erc_parser/erccommon"
 	"github.com/ethereum/go-ethereum/common"
 	"sync"
 )

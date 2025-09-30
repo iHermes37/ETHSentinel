@@ -1,7 +1,7 @@
 package ERC
 
 import (
-	erccommon "github.com/Crypto-ChainSentinel/modules/parserEngine/erc_parser/erccommon"
+	erccommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/erc_parser/erccommon"
 )
 
 var erc20ABIJSon = `[

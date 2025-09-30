@@ -1,4 +1,4 @@
-package scanner
+package realtimeMonitor
 
 import (
 	"encoding/json"
