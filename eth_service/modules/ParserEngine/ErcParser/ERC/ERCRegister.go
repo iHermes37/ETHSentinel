@@ -1,9 +1,10 @@
 package ERC
 
 import (
+	"sync"
+
 	"github.com/Crypto-ChainSentinel/modules/ParserEngine/erc_parser/erccommon"
 	"github.com/ethereum/go-ethereum/common"
-	"sync"
 )
 
 type ProtocolParser struct {

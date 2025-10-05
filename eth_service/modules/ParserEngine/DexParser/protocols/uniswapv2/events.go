@@ -1,13 +1,13 @@
-package UniswapV2Protocol
+package uniswapv2
 
 import (
-	abligens "github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/abigens"
-	"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/common"
+	abligens "github.com/Crypto-ChainSentinel/modules/ParserEngine/DexParser/abigens"
+	"github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 )
 
 type UniswapV2_SwapEvent struct {
-	dexcommon.EventMetadata // 嵌入 BaseEvent 自动实现 UnifiedEvent
-	Event                   abligens.UniswappairSwap
+	common.EventMetadata // 嵌入 BaseEvent 自动实现 UnifiedEvent
+	Event                abligens.UniswappairSwap
 }
 
 type UniswapV2_MintEvent struct {

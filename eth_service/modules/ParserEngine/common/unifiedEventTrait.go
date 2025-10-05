@@ -1,8 +1,9 @@
-package dexcommon
+package common
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // UnifiedEvent 接口
@@ -25,14 +26,14 @@ type UnifiedEvent interface {
 
 // EventMetadata 封装以太坊链上事件的基础信息，用于统一事件处理
 type EventMetadata struct {
-	EventTypeVal        EventSig    // 事件类型，例如 Swap、Deposit、Withdraw 等
-	ProtocolVal         Protocol    // 协议类型，例如 UniswapV2、Sushiswap 等
-	TxHashVal           common.Hash // 交易哈希（唯一标识交易）
-	BlockNumberVal      *big.Int    // 区块高度，用于排序和定位交易所在区块
-	OuterIndexVal       uint        // log 在交易中的索引
-	TransactionIndexVal uint        // 交易在区块中的索引位置，用于区分同区块内多笔交易
-	SwapDataVal         SwapData    // swap 相关数据，例如 from_token、to_token、数量等
-	SwapParsed          bool        // swap 数据是否已经解析完成
+	EventTypeVal        EventSig     // 事件类型，例如 Swap、Deposit、Withdraw 等
+	ProtocolVal         ProtocolImpl // 协议类型，例如 UniswapV2、Sushiswap 等
+	TxHashVal           common.Hash  // 交易哈希（唯一标识交易）
+	BlockNumberVal      *big.Int     // 区块高度，用于排序和定位交易所在区块
+	OuterIndexVal       uint         // log 在交易中的索引
+	TransactionIndexVal uint         // 交易在区块中的索引位置，用于区分同区块内多笔交易
+	SwapDataVal         SwapData     // swap 相关数据，例如 from_token、to_token、数量等
+	SwapParsed          bool         // swap 数据是否已经解析完成
 }
 
 func (b *EventMetadata) EventType() EventSig   { return b.EventTypeVal }

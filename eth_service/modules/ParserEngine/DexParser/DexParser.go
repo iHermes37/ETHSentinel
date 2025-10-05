@@ -3,6 +3,7 @@ package dex_parser
 import (
 	"encoding/json"
 	"fmt"
+
 	dexcommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/common"
 	"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/protocols"
 	"github.com/ethereum/go-ethereum/common"

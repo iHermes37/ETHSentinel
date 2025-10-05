@@ -1,9 +1,10 @@
-package dexcommon
+package common
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
 )
 
 // 枚举类型
@@ -11,13 +12,16 @@ type EventSig common.Hash
 
 // 枚举值
 var (
-	UniswapV2_Swap EventSig = EventSig(crypto.Keccak256Hash([]byte("Swap(address,uint256,uint256,uint256,uint256,address)")))
+	UniswapV2Swap EventSig = EventSig(crypto.Keccak256Hash([]byte("Swap(address,uint256,uint256,uint256,uint256,address)")))
 )
 
-type Protocol string
+type ProtocolImpl string
 
 const (
-	UniswapV2 Protocol = "UniswapV2"
+	UniswapV2 ProtocolImpl = "UniswapV2"
+	SushiSwap ProtocolImpl = "SushiSwap"
+	ERC20Std  ProtocolImpl = "ERC20Standard"
+	Aave      ProtocolImpl = "Aave"
 )
 
 type SwapData struct {
@@ -29,3 +33,11 @@ type SwapData struct {
 	Recipient   common.Address `json:"recipient"`
 	Description *string        `json:"description,omitempty"` // 可选字段
 }
+
+type ProtocolType string
+
+const (
+	DEX     ProtocolType = "DEX"
+	ERC20   ProtocolType = "ERC20"
+	Lending ProtocolType = "LENDING"
+)
