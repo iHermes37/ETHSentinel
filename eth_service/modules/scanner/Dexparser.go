@@ -3,6 +3,11 @@ package scanner
 import (
 	"context"
 	"fmt"
+	"log"
+	"math"
+	"math/big"
+	"strings"
+
 	"github.com/Crypto-ChainSentinel/initialize"
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/Crypto-ChainSentinel/utils"
@@ -11,10 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"log"
-	"math"
-	"math/big"
-	"strings"
 )
 
 func ParseDexInput(tx *types.Transaction, dexname string) models.DeFiTxDetail {
