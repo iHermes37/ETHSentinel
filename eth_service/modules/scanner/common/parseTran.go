@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func ParseTran(tranreceipt *types.Receipt,
+func ParseTranByLog(tranreceipt *types.Receipt,
 	selectedProtocols map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl) ParserEngineCommon.UnifiedEvent {
 
 	metadata := ParserEngineCommon.EventMetadata{}
@@ -31,4 +31,8 @@ func ParseTran(tranreceipt *types.Receipt,
 	}
 
 	return ev
+}
+
+func ParseTran(trans *types.Transaction) {
+
 }
