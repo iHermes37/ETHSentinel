@@ -191,7 +191,7 @@ func Executearbitrage(pair models.CrossPairData) {
 		asset = pair.PullToken.Id // 基准代币
 		amount = pair.Opportunity.X
 	} else {
-		fmt.Println("No arbitrageur opportunity")
+		fmt.Println("No Arbitrageur opportunity")
 		return
 	}
 

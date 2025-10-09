@@ -1,20 +1,21 @@
-package connectionManager
+package ConnectionManager
 
 import (
+	"log"
+	"net"
+	"net/http"
+	"net/url"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/websocket"
 	"golang.org/x/net/context"
 	"golang.org/x/net/proxy"
-	"log"
-	"net"
-	"net/http"
-	"net/url"
 )
 
 func InfuraConn() *ethclient.Client {
 	rpcURL := "https://mainnet.infura.io/v3/0d79a9c32c814e1da6133850f6fa1128"
-	proxyStr := "http://192.168.150.215:7890"
+	proxyStr := "http://192.168.182.215:7890"
 	proxyURL, err := url.Parse(proxyStr)
 	if err != nil {
 		log.Fatalf("代理地址解析失败: %v", err)
@@ -40,7 +41,7 @@ func InfuraConn() *ethclient.Client {
 }
 
 func InfuraConn_ws() *ethclient.Client {
-	socksDialer, _ := proxy.SOCKS5("tcp", "192.168.248.215:7890", nil, proxy.Direct)
+	socksDialer, _ := proxy.SOCKS5("tcp", "192.168.182.215:7890", nil, proxy.Direct)
 
 	// 创建 websocket.Dialer 并设置 NetDial
 	wsDialer := websocket.Dialer{

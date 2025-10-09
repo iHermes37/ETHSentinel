@@ -1,4 +1,4 @@
-package arbitrageur
+package Arbitrageur
 
 import (
 	"fmt"

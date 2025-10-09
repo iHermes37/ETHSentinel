@@ -17,7 +17,6 @@ func ParseTranByLog(tranreceipt *types.Receipt,
 	metadata.TxHashVal = tranreceipt.TxHash
 
 	protocolManager := ParserEngine.ParserEngine()
-
 	chain := BuildParserChain(protocolManager, selectedProtocols)
 
 	var ev ParserEngineCommon.UnifiedEvent
@@ -31,8 +30,4 @@ func ParseTranByLog(tranreceipt *types.Receipt,
 	}
 
 	return ev
-}
-
-func ParseTran(trans *types.Transaction) {
-
 }

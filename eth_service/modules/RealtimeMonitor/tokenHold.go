@@ -1,4 +1,4 @@
-package realtimeMonitor
+package RealtimeMonitor
 
 import (
 	"encoding/json"

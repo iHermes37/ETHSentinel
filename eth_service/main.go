@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
-
+	connectionManager "github.com/Crypto-ChainSentinel/modules/ConnectionManager"
+	"github.com/Crypto-ChainSentinel/utils"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+	"log"
 	//"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/ERC"
 
 	"time"
@@ -121,54 +126,159 @@ func mockLog(address common.Address) types.Log {
 // 	}
 // }
 
-// func findmempool() {
-// 	// 使用 WebSocket 连接节点
-// 	client, err := rpc.Dial("wss://mainnet.infura.io/ws/v3/YOUR_INFURA_KEY")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+func MonitorMempool() {
+	client, err := rpc.Dial("wss://mainnet.infura.io/ws/v3/0d79a9c32c814e1da6133850f6fa1128")
+	if err != nil {
+		log.Fatal("连接节点失败:", err)
+	}
+	defer client.Close()
 
-// 	gc := gethclient.New(rc)
+	gc := gethclient.New(client)
 
-// 	transactions := make(chan *types.Transaction, 100)
-// 	pendingTransactions, err := gc.SubscribeFullPendingTransactions(context.Background(), transactions)
-// 	if err != nil {
-// 		return
-// 	}
+	// 用于接收完整的 pending 交易
+	//transactions := make(chan *types.Transaction, 100)
+	//_, err = gc.SubscribeFullPendingTransactions(context.Background(), transactions)
+	//if err != nil {
+	//	log.Fatal("订阅 pending 交易失败:", err)
+	//}
+	////defer sub.Unsubscribe()
+	//fmt.Println("✅ 已订阅 pending transactions...")
+	//for {
+	//	select {
+	//	case tx := <-transactions:
+	//		from, _ := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
+	//		fmt.Printf("Pending Tx from: %s, to: %v, value: %s\n",
+	//			from.Hex(),
+	//			func() string {
+	//				if tx.To() != nil {
+	//					return tx.To().Hex()
+	//				}
+	//				return "ContractCreation"
+	//			}(),
+	//			tx.Value().String())
+	//	}
+	//}
 
-// 	for tx := range transactions {
-// 		txBytes, _ := tx.MarshalJSON()
-// 		log.Printf("Received tx: %s", string(txBytes))
-// 	}
+	//txHashes := make(chan string)
+	//_, err = client.Subscribe(context.Background(), "eth", txHashes, "newPendingTransactions")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//for txHash := range txHashes {
+	//	fmt.Println("Pending tx hash:", txHash)
+	//}
 
-// 	// 创建 channel 接收交易哈希
-// 	txHashes := make(chan string)
+	hashes := make(chan common.Hash, 100)
+	_, err = gc.SubscribePendingTransactions(context.Background(), hashes)
+	if err != nil {
+		log.Printf("failed to SubscribePendingTransactions: %v", err)
+		return
+	}
+	log.Print("subscribed pending txs now")
+	for {
+		select {
+		case hash := <-hashes:
+			log.Printf("received tx %s", hash)
+		}
+	}
 
-// 	// 使用 Subscribe 方法订阅 newPendingTransactions
-// 	sub, err := client.Subscribe(context.Background(), "eth", txHashes, "newPendingTransactions")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+}
 
-// 	fmt.Println("✅ 已订阅 pending transactions...")
+//func watch() {
+//	wss := "wss://mainnet.infura.io/ws/v3/0d79a9c32c814e1da6133850f6fa1128"
+//
+//	rc, err := rpc.Dial(wss)
+//	if err != nil {
+//		log.Printf("failed to dial: %v", err)
+//		return
+//	}
+//	log.Printf("connected to %s", wss)
+//	gc := gethclient.New(rc)
+//
+//	transactions := make(chan *types.Transaction, 100)
+//	_, err = gc.SubscribeFullPendingTransactions(context.Background(), transactions)
+//	if err != nil {
+//		log.Printf("failed to SubscribePendingTransactions: %v", err)
+//		return
+//	}
+//	log.Print("subscribed pending txs now")
+//	for {
+//		select {
+//		case transaction := <-transactions:
+//			// 这里的transaction是完整数据，可以直接使用
+//			txBytes, err := transaction.MarshalJSON()
+//			if err != nil {
+//				continue
+//			}
+//			log.Printf("received tx %s", string(txBytes))
+//		}
+//	}
+//}
 
-// 	// 循环监听
-// 	for {
-// 		select {
-// 		case err := <-sub.Err():
-// 			log.Println("订阅错误:", err)
-// 		case txHash := <-txHashes:
-// 			fmt.Println("Pending Tx Hash:", txHash)
-// 			// 如果需要完整交易对象，可用 ethclient.TransactionByHash 查询
-// 		}
-// 	}
+//func main() {
+//	//TestUniswapV2SwapParsing()
+//	//block := GetEthBlock()
+//	//commonParser.ParseBlock(block)
+//	//cal()
+//	fmt.Println("Hello, World!")
+//	//MonitorMempool()
+//
+//	//go watch()
+//	//signalChan := make(chan os.Signal, 1)
+//	//signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+//	//<-signalChan
+//
+//}
 
-// }
+func GetPendingTx() chan *types.Transaction {
+	client, err := rpc.Dial("wss://mainnet.infura.io/ws/v3/0d79a9c32c814e1da6133850f6fa1128")
+	if err != nil {
+		log.Fatal("连接节点失败:", err)
+	}
+	defer client.Close()
+
+	gc := gethclient.New(client)
+
+	hashes := make(chan common.Hash, 100)
+	_, err = gc.SubscribePendingTransactions(context.Background(), hashes)
+	if err != nil {
+		log.Printf("failed to SubscribePendingTransactions: %v", err)
+	}
+	log.Print("subscribed pending txs now")
+	txchannel := make(chan *types.Transaction)
+	for {
+		select {
+		case hash := <-hashes:
+			log.Printf("received tx %s", hash)
+			ethClient := connectionManager.InfuraConn()
+			tx, isPending, err := ethClient.TransactionByHash(context.Background(), hash)
+			if err != nil {
+				log.Println("TransactionByHash error:", err)
+				continue
+			}
+			txchannel <- tx
+			fmt.Printf("Tx: %s, Pending: %v\n", tx.Hash().Hex(), isPending)
+		}
+	}
+
+	return txchannel
+}
 
 func main() {
-	//TestUniswapV2SwapParsing()
-	//block := GetEthBlock()
-	//commonParser.ParseBlock(block)
-	//cal()
-	fmt.Println("Hello, World!")
+	txChan := GetPendingTx() // 启动订阅并获取 channel
+	cli := connectionManager.InfuraConn()
+
+	for tx := range txChan {
+		fmt.Printf("New pending tx: %s from %s to %v, value: %s\n",
+			tx.Hash().Hex(),
+			utils.Parsefrom(cli, tx).Hex(),
+			func() string {
+				if tx.To() != nil {
+					return tx.To().Hex()
+				}
+				return "ContractCreation"
+			}(),
+			tx.Value().String(),
+		)
+	}
 }

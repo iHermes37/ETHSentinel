@@ -1,4 +1,4 @@
-package arbitrageur
+package Arbitrageur
 
 var strategies = map[string]ArbitrageStrategy{
 	"CrossDEX":   &models.CrossDEXStrategy{},

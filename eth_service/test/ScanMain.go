@@ -3,7 +3,6 @@ package scanner
 import (
 	"fmt"
 	"github.com/Crypto-ChainSentinel/modules/ParserEngine"
-	"github.com/Crypto-ChainSentinel/modules/connectionManager"
 	"github.com/ethereum/go-ethereum/core/types"
 	"sync"
 )
@@ -94,27 +93,25 @@ type scanner interface {
 }
 
 type Whalehunter struct {
-	amount  int
-
+	amount int
 }
 
-func (wh *Whalehunter)ScanTx(tx types.Transaction) string{
-	client:=connectionManager.InfuraConn()
+func (wh *Whalehunter) ScanTx(tx types.Transaction) string {
+	client := connectionManager.InfuraConn()
 	receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-	parser:=ParserEngine.CreateParser()
+	parser := ParserEngine.CreateParser()
 
 	//针对大额dex交易
-	result:=parser.DexParser().ParseTran(receipt)
-	if result.amont>wh.amount{
-	//	发现巨鲸
+	result := parser.DexParser().ParseTran(receipt)
+	if result.amont > wh.amount {
+		//	发现巨鲸
 	}
 
-	
 }
 
-func (wh *Whalehunter)ScanBlock(block types.Block){
+func (wh *Whalehunter) ScanBlock(block types.Block) {
 
-	txs:=block.Transactions()
+	txs := block.Transactions()
 	txCh := make(chan types.Transaction, len(txs))
 	resultCh := make(chan string, len(txs))
 
@@ -137,7 +134,6 @@ func (wh *Whalehunter)ScanBlock(block types.Block){
 		}()
 	}
 
-
 	wg.Wait()
 	close(resultCh)
 
@@ -146,8 +142,6 @@ func (wh *Whalehunter)ScanBlock(block types.Block){
 		fmt.Println(res)
 	}
 }
-
-func
 
 type GoldMiniter struct {
 }
