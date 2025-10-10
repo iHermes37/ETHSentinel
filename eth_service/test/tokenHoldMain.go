@@ -1,4 +1,4 @@
-package RealtimeMonitor
+package tokenHold
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 // 配置常量
 const (
 	DUNE_API = "https://api.dune.com/api/v1"
-	QUERY_ID = "3237025" // 你在 Dune 上保存的查询ID
+	QUERY_ID = "3237025" // 在 Dune 上保存的查询ID
 )
 
 func WatchUSDC() {

@@ -3,18 +3,19 @@ package common
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/Crypto-ChainSentinel/modules/ConnectionManager"
 	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"sync"
 )
 
-func ScanBlock(block *types.Block, cfg ScanConfig) []ParserEngineCommon.UnifiedEvent {
+func ScanBlock(block *types.Block, cfg ScanTransConfig) [][]ParserEngineCommon.UnifiedEvent {
 	client := ConnectionManager.InfuraConn()
 	ctx := context.Background()
 
-	resultPipeline := make(chan ParserEngineCommon.UnifiedEvent, len(block.Transactions()))
+	resultPipeline := make(chan []ParserEngineCommon.UnifiedEvent, len(block.Transactions()))
 	var wg sync.WaitGroup
 
 	for _, trans := range block.Transactions() {
@@ -28,9 +29,10 @@ func ScanBlock(block *types.Block, cfg ScanConfig) []ParserEngineCommon.UnifiedE
 				fmt.Println("Receipt error:", err)
 				return
 			}
+
 			if !ParserFilter(tx, FilterSetting{}) {
-				ev := ParseTranByLog(tranreceipt, *cfg.SelectedProtocols)
-				resultPipeline <- ev
+				evlist := ParseTranByLog(tranreceipt, *cfg.SelectedProtocols)
+				resultPipeline <- evlist
 			}
 
 		}(tx, txhash)
@@ -43,7 +45,7 @@ func ScanBlock(block *types.Block, cfg ScanConfig) []ParserEngineCommon.UnifiedE
 	}()
 
 	// 收集结果
-	var evlist []ParserEngineCommon.UnifiedEvent
+	var evlist [][]ParserEngineCommon.UnifiedEvent
 	for ev := range resultPipeline {
 		evlist = append(evlist, ev)
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type ScanConfig struct {
+type ScanTransConfig struct {
 	WhaleAddr         *common.Address
 	SelectedProtocols *map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl
 }

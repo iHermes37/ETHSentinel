@@ -45,6 +45,13 @@ func GetPendingTx() chan *types.Transaction {
 	return txchannel
 }
 
-func MonitorMempool() {
+func MonitorMempool(txpipline chan *types.Transaction) {
+
+	for tx := range txpipline {
+		if tx.To() || tx.from() {
+			//巨鲸操作---解析---报警
+
+		}
+	}
 
 }

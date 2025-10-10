@@ -1,32 +1,31 @@
-package Scanner
+package common
 
 import (
 	"context"
-	"github.com/Crypto-ChainSentinel/modules/ConnectionManager"
-	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
-	ScanCommon "github.com/Crypto-ChainSentinel/modules/Scanner/Common"
-	"github.com/Crypto-ChainSentinel/modules/Scanner/Handle"
-	"github.com/ethereum/go-ethereum/common"
 	"log"
 	"math/big"
 	"sync"
+
+	"github.com/Crypto-ChainSentinel/modules/ConnectionManager"
+	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
-type TrackWhaleConfig struct {
+type ScanBlocksConfig struct {
 	WhaleAddr  *common.Address
 	StartBlock *big.Int
 	EndBlock   *big.Int
 	selected   *map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl
 }
 
-func TrackWhaleMain(cfg TrackWhaleConfig) {
+func ScanBlocks(cfg ScanBlocksConfig) chan [][]ParserEngineCommon.UnifiedEvent {
 	var wg sync.WaitGroup
 	client := ConnectionManager.InfuraConn()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	//var globalEv []ParserEngineCommon.UnifiedEvent
 
-	handlePipline := make(chan []ParserEngineCommon.UnifiedEvent, 10)
+	handlePipline := make(chan [][]ParserEngineCommon.UnifiedEvent, 10)
 	sem := make(chan struct{}, 10) // 同时最多 10 个 goroutine
 
 	for i := new(big.Int).Set(cfg.StartBlock); i.Cmp(cfg.EndBlock) < 0; i.Add(i, big.NewInt(1)) {
@@ -43,13 +42,13 @@ func TrackWhaleMain(cfg TrackWhaleConfig) {
 				return
 			}
 
-			scanCfg := ScanCommon.ScanConfig{
+			scanTxCfg := ScanTransConfig{
 				WhaleAddr:         cfg.WhaleAddr,
 				SelectedProtocols: cfg.selected,
 			}
 
-			evlist := ScanCommon.ScanBlock(block, scanCfg)
-			handlePipline <- evlist
+			evlists := ScanBlock(block, scanTxCfg)
+			handlePipline <- evlists
 		}(blockNumber)
 	}
 
@@ -59,5 +58,6 @@ func TrackWhaleMain(cfg TrackWhaleConfig) {
 		close(handlePipline)
 	}()
 
-	go Handle.HandleEvents(handlePipline)
+	// go Handle.HandleEvents(handlePipline)
+	return handlePipline
 }
