@@ -36,7 +36,7 @@ func Findwhale(cfg FindwhaleConfig) {
 
 	if cfg.ScanWhale{
 		scancfg:=ScanBlocksConfig{
-			cfg.StartBlock
+			cfg.StartBlock,
 			cfg.EndBlock
 		}
 
@@ -45,7 +45,6 @@ func Findwhale(cfg FindwhaleConfig) {
 
 	}
 }
-
 
 func HandleNewWhale(evlists chan [][]UnifiedEvent) {
 	for evlist := range evlists {

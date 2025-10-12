@@ -30,7 +30,7 @@ func ScanBlock(block *types.Block, cfg ScanTransConfig) [][]ParserEngineCommon.U
 				return
 			}
 
-			if !ParserFilter(tx, FilterSetting{}) {
+			if !ParserFilter(tx, cfg.BeforFilter) {
 				evlist := ParseTranByLog(tranreceipt, *cfg.SelectedProtocols)
 				resultPipeline <- evlist
 			}

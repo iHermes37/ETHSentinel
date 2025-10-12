@@ -15,6 +15,15 @@ var (
 	UniswapV2Swap EventSig = EventSig(crypto.Keccak256Hash([]byte("Swap(address,uint256,uint256,uint256,uint256,address)")))
 )
 
+type ProtocolType string
+
+const (
+	DEX     ProtocolType = "DEX"
+	ERC     ProtocolType = "ERC"
+	Lending ProtocolType = "LENDING"
+	Unknow  ProtocolType = "Unknow"
+)
+
 type ProtocolImpl string
 
 const (
@@ -22,6 +31,12 @@ const (
 	SushiSwap ProtocolImpl = "SushiSwap"
 	ERC20Std  ProtocolImpl = "ERC20Standard"
 	Aave      ProtocolImpl = "Aave"
+)
+
+type EventMethod string
+
+var (
+	Swap EventMethod = "Swap"
 )
 
 type SwapData struct {
@@ -33,11 +48,3 @@ type SwapData struct {
 	Recipient   common.Address `json:"recipient"`
 	Description *string        `json:"description,omitempty"` // 可选字段
 }
-
-type ProtocolType string
-
-const (
-	DEX     ProtocolType = "DEX"
-	ERC20   ProtocolType = "ERC20"
-	Lending ProtocolType = "LENDING"
-)

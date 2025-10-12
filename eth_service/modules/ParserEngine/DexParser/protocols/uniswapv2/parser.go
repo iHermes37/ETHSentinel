@@ -2,6 +2,7 @@ package uniswapv2
 
 import (
 	"fmt"
+	"math/big"
 
 	abligens "github.com/Crypto-ChainSentinel/modules/ParserEngine/DexParser/abigens"
 	dexcommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
@@ -57,8 +58,15 @@ func ParseSwapEvent(log types.Log, metadata dexcommon.EventMetadata) (dexcommon.
 		return nil, err
 	}
 
-	return &UniswapV2_SwapEvent{
-		EventMetadata: metadata,
-		Event:         *swapEvent, // 注意：Event 是值类型
+	return &dexcommon.UnifiedEventData{
+		EventMetadata: &metadata,
+		BaseEvent: &dexcommon.BaseEvent{
+			EventTypeVal: dexcommon.Swap,
+			From:         swapEvent.Sender,
+			TokenVal:     []string{tokenIn, tokenOut},
+			AmountVal:    []*big.Int{swapEvent.AmountIn, swapEvent.AmountOut},
+		},
+		Detail: swapEvent,
 	}, nil
+
 }

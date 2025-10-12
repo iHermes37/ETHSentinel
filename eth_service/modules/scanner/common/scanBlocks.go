@@ -8,14 +8,13 @@ import (
 
 	"github.com/Crypto-ChainSentinel/modules/ConnectionManager"
 	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type ScanBlocksConfig struct {
-	WhaleAddr  *common.Address
+	FilterCfg  FilterConfig
 	StartBlock *big.Int
 	EndBlock   *big.Int
-	selected   *map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl
+	Selected   *map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl
 }
 
 func ScanBlocks(cfg ScanBlocksConfig) chan [][]ParserEngineCommon.UnifiedEvent {
@@ -43,8 +42,8 @@ func ScanBlocks(cfg ScanBlocksConfig) chan [][]ParserEngineCommon.UnifiedEvent {
 			}
 
 			scanTxCfg := ScanTransConfig{
-				WhaleAddr:         cfg.WhaleAddr,
-				SelectedProtocols: cfg.selected,
+				BeforFilter:       cfg.FilterCfg,
+				SelectedProtocols: cfg.Selected,
 			}
 
 			evlists := ScanBlock(block, scanTxCfg)
