@@ -3,12 +3,13 @@ package RealtimeMonitor
 import (
 	"context"
 	"fmt"
+	"log"
+
 	connectionManager "github.com/Crypto-ChainSentinel/modules/ConnectionManager"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"log"
 )
 
 func GetPendingTx() chan *types.Transaction {
@@ -53,5 +54,4 @@ func MonitorMempool(txpipline chan *types.Transaction) {
 
 		}
 	}
-
 }
