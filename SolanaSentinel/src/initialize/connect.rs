@@ -11,7 +11,5 @@ pub async fn ws_connect()-> Result<WebSocketStream<MaybeTlsStream<TcpStream>>, B
             e
         })?;
 
-    println!("WebSocket 已连接");
-
     return Ok(ws_stream);
 }
