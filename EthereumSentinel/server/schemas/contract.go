@@ -1,9 +1,11 @@
 package model
 
 import (
+	"math/big"
+	"time"
+
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/common"
-	"time"
 )
 
 type ContractQueryParams struct {
@@ -50,4 +52,18 @@ type LiquidityChange struct {
 	Time         time.Time           `json:"time"`         // 发生时间
 	TxHash       string              `json:"txHash"`       // 对应交易哈希
 	Sender       string              `json:"sender"`       // 操作者地址
+}
+
+// ===================================================
+type GetDeployedContractsParam struct {
+	StartBlock *big.Int
+	EndBlock   *big.Int
+}
+
+type AddKnownContractsParam struct {
+	Category    models.ContractType
+	Protocol    models.ConstractProto
+	RouterAddr  common.Address
+	FactoryAddr common.Address
+	Method      models.ConstractMethod
 }

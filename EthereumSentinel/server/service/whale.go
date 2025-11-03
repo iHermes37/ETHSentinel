@@ -3,8 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/Crypto-ChainSentinel/server/internal/model"
-	"github.com/Crypto-ChainSentinel/server/internal/repository"
+	"github.com/Crypto-ChainSentinel/server/model"
+	"github.com/Crypto-ChainSentinel/server/repository"
 )
 
 type WhaleService struct {
@@ -40,15 +40,5 @@ func (h *WhaleService) CapturedWhales(task model.CapturedWhale) error {
 }
 
 func (h *WhaleService) TrackWhales(task model.TrackWhale) error {
-	switch task.Method {
-	case model.HoldingsAnalysis:
-		break
-	case model.ChainScan:
-		break
-	case model.TransactionPattern:
-		break
-	default:
-		return fmt.Errorf("不支持的检测方法: %s", task.Method)
-	}
-	return nil
+
 }

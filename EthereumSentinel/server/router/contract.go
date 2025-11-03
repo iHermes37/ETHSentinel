@@ -10,12 +10,20 @@ func InitContractPoolRouter(r *gin.Engine) {
 
 	// 顶层组
 	onchainGroup := r.Group("/onchainTianeye")
-	// onchainGroup.GET("/contracts", contractHandler.QueryContracts)
-	ContractGroup := onchainGroup.Group("/contract")
+	contract := onchainGroup.Group("/contract")
+
+	// ========监控合约======================
+	monitor := contract.Group("/monitor")
 	{
-		ContractGroup.GET("/deployed", contractHandler.GetDeployContracts)
-		ContractGroup.GET("/arbitrageBot", contractHandler.GetArbitrageBot)
-		ContractGroup.GET("/alphaProjects", contractHandler.GetAlphaProjects)
-		ContractGroup.GET("/newToken", contractHandler.GetNewToken)
+		monitor.GET("/deployed", contractHandler.GetMonitorContracts)
+		monitor.GET("/arbitrageBot", contractHandler.GetArbitrageBot)
+		monitor.GET("/alphaProjects", contractHandler.GetAlphaProjects)
+		monitor.GET("/newToken", contractHandler.GetNewToken)
+	}
+
+	// =======已知合约表======================
+	defi := contract.Group("/defi")
+	{
+		defi.PUT("/newcontract", contractHandler.AddKnownContracts)
 	}
 }

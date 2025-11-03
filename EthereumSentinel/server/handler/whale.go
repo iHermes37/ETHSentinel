@@ -58,9 +58,7 @@ func (h *WhaleHandler) QueryWhaleTransaction(c *gin.Context) {
 
 }
 
-func (h *WhaleHandler) QueryWhaleHoldings(c *gin.Context) {
-
-}
+// ============================
 
 func (h *WhaleHandler) CapturedWhales(c *gin.Context) {
 	var QueryParam model.CapturedWhale
@@ -87,7 +85,7 @@ func (h *WhaleHandler) TrackWhales(c *gin.Context) {
 	}
 
 	err := h.service.TrackWhales(QueryParam)
-	// ✅ 根据错误类型返回合适的HTTP状态码
+	//根据错误类型返回合适的HTTP状态码
 	if strings.Contains(err.Error(), "不支持的检测方法") {
 		c.JSON(400, gin.H{"error": err.Error()}) // 客户端错误
 	} else {
@@ -95,3 +93,34 @@ func (h *WhaleHandler) TrackWhales(c *gin.Context) {
 	}
 	c.JSON(200, whales) // 返回 JSON 响应
 }
+
+// =================================
+
+func (h *WhaleHandler) AddWhale(c *gin.Context) {
+
+}
+
+func (h *WhaleHandler) SearchWhale(c *gin.Context) {
+	// 解析分页参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+
+	var QueryParam model.WhaleQueryParams
+	if err := c.ShouldBindQuery(&QueryParam); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	whales, err := h.service.QueryCapturedWhales(QueryParam, page, pageSize)
+	if err != nil {
+		c.JSON(404, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, whales) // 返回 JSON 响应
+}
+
+func (h *WhaleHandler) GetMonitoredWhale(c *gin.Context) {
+
+}
+
+// =================================

@@ -1,16 +1,69 @@
 package Scanner
 
 import (
-	"fmt"
-	"github.com/Crypto-ChainSentinel/modules/ConnManager"
-	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 	"math"
 	"math/big"
+
+	"github.com/Crypto-ChainSentinel/modules/ConnManager"
+	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 
 	filter "github.com/Crypto-ChainSentinel/modules/Scanner/Filter"
 	"github.com/Crypto-ChainSentinel/utils"
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+type TheFilter interface {
+	Filter_exec()
+}
+
+type FilterMgr struct {
+	FilterStrategy TheFilter
+}
+
+func initFilterMgr() {
+
+}
+
+func (fm *FilterMgr) SetTheFilter() {
+
+}
+
+func (fm *FilterMgr) Add() {
+
+}
+
+func (fm *FilterMgr) Get() {
+
+}
+
+func (fm *FilterMgr) Filter_exec() {
+
+}
+
+// ======================================================
+type FindWhaleByChainScan struct {
+}
+
+func (fw *FindWhaleByChainScan) filter_exec() {
+
+}
+
+type TrackWhaleByChainScan struct {
+}
+
+func (tw *TrackWhaleByChainScan) filter_exec() {
+
+}
+
+// =========================================================
+type FindMintoredContractByChainScan struct {
+}
+
+func (fmc *FindMintoredContractByChainScan) filter_exec() {
+
+}
+
+// =========================================================
 
 // 初步筛除交易，筛出 ETH交易/合约部署/非巨鲸相关
 func ParserFilter(trans *types.Transaction, cfg filter.FilterConfig, selected map[ParserEngineCommon.ProtocolType][]ParserEngineCommon.ProtocolImpl) (ParserEngineCommon.ProtocolType, bool) {
@@ -57,10 +110,6 @@ func ParserFilter(trans *types.Transaction, cfg filter.FilterConfig, selected ma
 			filter.HandleNewContract(trans, contractaddr)
 			return true
 		}
-		//寻找潜在潜力合约项目
-	case filter.FindArbitargBot:
-		fmt.Print("等待完成")
-		break
 	}
 	return false
 }

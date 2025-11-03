@@ -3,8 +3,8 @@ package handler
 import (
 	"strconv"
 
-	"github.com/Crypto-ChainSentinel/server/internal/model"
-	"github.com/Crypto-ChainSentinel/server/internal/service"
+	model "github.com/Crypto-ChainSentinel/server/schemas"
+	"github.com/Crypto-ChainSentinel/server/service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,7 +40,7 @@ func (h *ContractHandler) QueryContracts(c *gin.Context) {
 
 // =======================================================================
 
-func (h *ContractHandler) GetDeployContracts(c *gin.Context) {
+func (h *ContractHandler) GetMonitorContracts(c *gin.Context) {
 
 }
 
@@ -53,5 +53,11 @@ func (h *ContractHandler) GetAlphaProjects(c *gin.Context) {
 }
 
 func (h *ContractHandler) GetNewToken(c *gin.Context) {
+
+}
+
+// =============================================================================
+
+func (h *ContractHandler) AddKnownContracts(c *gin.Context) {
 
 }
