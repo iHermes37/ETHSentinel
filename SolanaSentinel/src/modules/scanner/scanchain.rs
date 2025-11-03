@@ -1,9 +1,10 @@
 use solana_client::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcBlockConfig;
+use serde_json::to_string_pretty;
+use std::fs::File;
+use serde_json::to_writer_pretty;
 
-use crate::modules::scanner::parser::parse_transaction;
-
-pub async fn scanmain(){
+pub async fn scan_main(){
     let client=RpcClient::new(
         "https://mainnet.helius-rpc.com/?api-key=41714ee1-e75b-45be-b8c3-7ffe8ae02f73".to_string(),
     );
@@ -16,7 +17,14 @@ pub async fn scanmain(){
     // 获取区块
     let block=client.get_block_with_config(slot,block_config).expect("获取失败");
 
+    // 使用 serde_json 输出成 JSON
+    let json = to_string_pretty(&block).expect("序列化失败");
+    println!("{}", json);
 
-    parse_transaction::parse_trans(&block);
+    // 保存到文件
+    let file = File::create("block.json").expect("无法创建文件");
+    to_writer_pretty(file, &block).expect("写入文件失败");
+
+    println!("区块已保存到 block.json");
 
 }

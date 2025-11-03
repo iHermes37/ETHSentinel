@@ -1,0 +1,2 @@
+cargo test --test test_hello -- --nocapture
+cargo run --example parse_tx_events
