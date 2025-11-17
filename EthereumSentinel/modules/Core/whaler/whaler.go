@@ -1,4 +1,10 @@
-package capturedWhale
+package whaler
+
+import (
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/types"
+)
 
 // func HandleNewWhale(evlists chan [][]ParserEngineCommon.UnifiedEventData, Threshold common.Decimal) {
 // 	for evlist := range evlists { // 第一层：事件批次
@@ -63,3 +69,25 @@ package capturedWhale
 // 	}
 
 // }
+
+type Interval struct {
+	StartBlock *big.Int
+	EndBlock   *big.Int
+}
+
+type Whaler struct {
+	Interval
+}
+
+func (whaler *Whaler) ProcessEthTransaction(tx *types.Transaction) {
+
+}
+
+func (whaler *Whaler) ProcessTokenTransaction(rec *types.Receipt) {
+}
+
+func (whaler *Whaler) ProcessDefiTransaction(rec *types.Receipt) {
+}
+
+func (whaler *Whaler) ProcessNewContract(rec *types.Receipt) {
+}

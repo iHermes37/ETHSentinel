@@ -1,6 +1,8 @@
-package Scanner
+package Analysis
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"math/big"
 
@@ -12,46 +14,98 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type TheFilter interface {
-	Filter_exec()
+// 策略接口
+type FilterStrategy interface {
+	Exec(block *types.Block) []ParserEngineCommon.UnifiedEvent
+	Name() string
 }
 
-type FilterMgr struct {
-	FilterStrategy TheFilter
+// 策略工厂
+type FilterFactory struct {
+	strategies map[string]FilterStrategy
 }
 
-func initFilterMgr() {
+func NewFilterFactory() *FilterFactory {
+	factory := &FilterFactory{
+		strategies: make(map[string]FilterStrategy),
+	}
 
+	// 注册所有可用策略
+	factory.strategies["find_whale"] = &FindWhaleByChainScan{}
+	factory.strategies["track_whale"] = &TrackWhaleByChainScan{}
+	factory.strategies["monitor_contract"] = &FindMintoredContractByChainScan{}
+
+	return factory
 }
 
-func (fm *FilterMgr) SetTheFilter() {
-
+func (ff *FilterFactory) Create(filterType string) FilterStrategy {
+	return ff.strategies[filterType]
 }
 
-func (fm *FilterMgr) Add() {
-
+func (ff *FilterFactory) GetAvailableStrategies() []string {
+	var names []string
+	for name := range ff.strategies {
+		names = append(names, name)
+	}
+	return names
 }
 
-func (fm *FilterMgr) Get() {
-
+// 策略管理器
+type FilterManager struct {
+	factory         *FilterFactory
+	currentStrategy FilterStrategy
 }
 
-func (fm *FilterMgr) Filter_exec() {
+func NewFilterManager() *FilterManager {
+	return &FilterManager{
+		factory: NewFilterFactory(),
+	}
+}
 
+func (fm *FilterManager) SetCurrentFilter(filterType string) error {
+	strategy := fm.factory.Create(filterType)
+	if strategy == nil {
+		return fmt.Errorf("未知的策略类型: %s", filterType)
+	}
+	fm.currentStrategy = strategy
+	return nil
+}
+
+func (fm *FilterManager) Exec(block *types.Block) ([]ParserEngineCommon.UnifiedEvent, error) {
+	if fm.currentStrategy == nil {
+		return nil, errors.New("未设置当前策略")
+	}
+	return fm.currentStrategy.Exec(block), nil
+}
+
+func (fm *FilterManager) ExecuteMultiple(block *types.Block, filterTypes []string) (map[string][]ParserEngineCommon.UnifiedEvent, error) {
+	results := make(map[string][]ParserEngineCommon.UnifiedEvent)
+
+	for _, filterType := range filterTypes {
+		strategy := fm.factory.Create(filterType)
+		if strategy == nil {
+			return nil, fmt.Errorf("未知策略: %s", filterType)
+		}
+
+		events := strategy.Exec(block)
+		results[filterType] = events
+	}
+
+	return results, nil
 }
 
 // ======================================================
 type FindWhaleByChainScan struct {
 }
 
-func (fw *FindWhaleByChainScan) filter_exec() {
+func (fw *FindWhaleByChainScan) Exec() {
 
 }
 
 type TrackWhaleByChainScan struct {
 }
 
-func (tw *TrackWhaleByChainScan) filter_exec() {
+func (tw *TrackWhaleByChainScan) Exec() {
 
 }
 
@@ -59,7 +113,7 @@ func (tw *TrackWhaleByChainScan) filter_exec() {
 type FindMintoredContractByChainScan struct {
 }
 
-func (fmc *FindMintoredContractByChainScan) filter_exec() {
+func (fmc *FindMintoredContractByChainScan) Exec() {
 
 }
 

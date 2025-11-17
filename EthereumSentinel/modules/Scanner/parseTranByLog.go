@@ -21,16 +21,16 @@ func ParseTranByLog(tranreceipt *types.Receipt,
 	protocolManager := ParserEngine.ParserEngine()
 	chain := BuildParserChain(protocolManager, selectedProtocols)
 
-	var evlist []ParserEngineCommon.UnifiedEvent
+	var tran_evlist []ParserEngineCommon.UnifiedEvent
 
 	for _, log := range tranreceipt.Logs {
 		if ev, ok := chain.Handle(*log, metadata); ok {
 			fmt.Println("解析成功:", ev)
-			evlist = append(evlist, ev)
+			tran_evlist = append(tran_evlist, ev)
 		} else {
 			fmt.Println("未匹配事件", log.Topics[0])
 		}
 	}
 
-	return evlist
+	return tran_evlist
 }

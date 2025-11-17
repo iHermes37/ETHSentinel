@@ -8,11 +8,11 @@ import (
 func InitWhaleRouter(r *gin.Engine) {
 	WhaleHandler := handler.WhaleHandler{}
 
-	onchainGroup := r.Group("/onchainTianeye")
+	onchainGroup := r.Group("/onchainSentinel")
 
 	whales := onchainGroup.Group("/whales")
 	{
-		whales.POST("/AddWhale", WhaleHandler.AddWhale)
+		whales.POST("/Whale", WhaleHandler.AddWhale)
 		whales.GET("/MonitoredWhale", WhaleHandler.GetMonitoredWhale)
 	}
 

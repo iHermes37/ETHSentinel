@@ -9,18 +9,15 @@ import (
 	"github.com/Crypto-ChainSentinel/modules/ConnManager"
 	"github.com/Crypto-ChainSentinel/modules/Scanner/Filter"
 
-	ParserEngine "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
 )
 
-type ScanBlocksConfig struct {
-	FilterCfg  Filter.FilterConfig
+type Interval struct {
 	StartBlock *big.Int
 	EndBlock   *big.Int
-	Selected   *map[ParserEngine.ProtocolType][]ParserEngineCommon.ProtocolImpl
 }
 
-func ScanBlocks(cfg ScanBlocksConfig) chan [][]ParserEngineCommon.UnifiedEventData {
+func ScanBlocks(cfg Interval) chan [][]ParserEngineCommon.UnifiedEventData {
 	var wg sync.WaitGroup
 	client := ConnManager.InfuraConn()
 	ctx, cancel := context.WithCancel(context.Background())
