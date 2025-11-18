@@ -11,7 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-func Parsefrom(cli *ethclient.Client, tx *types.Transaction) common.Address {
+func GetFromAddr(tx *types.Transaction) *common.Address {
+
+	cli * ethclient.Client
 	chainID, _ := cli.NetworkID(context.Background())
 	signer := types.LatestSignerForChainID(chainID)
 	from, err := types.Sender(signer, tx)

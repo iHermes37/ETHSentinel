@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Crypto-ChainSentinel/utils"
 	"log"
 
 	connectionManager "github.com/Crypto-ChainSentinel/modules/ConnectionManager"
-	"github.com/Crypto-ChainSentinel/utils"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 
-	//"github.com/Crypto-ChainSentinel/modules/ParserEngine/dex_parser/ERC"
+	//"github.com/Crypto-ChainSentinel/modules/parse_engine/dex_parser/ERC"
 
 	"time"
 
@@ -52,7 +52,7 @@ import (
 // 	return dexcommon.EventMetadata{
 // 		EventTypeVal:        dexcommon.UniswapV2_SwapBuy,
 // 		ProtocolVal:         dexcommon.UniswapV2,
-// 		TxHashVal:           common.HexToHash("0xdeadbeef"),
+// 		TxHashVal:           tools.HexToHash("0xdeadbeef"),
 // 		BlockNumberVal:      123456,
 // 		OuterIndexVal:       0,
 // 		TransactionIndexVal: &txIndex,

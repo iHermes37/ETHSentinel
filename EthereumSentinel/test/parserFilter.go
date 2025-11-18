@@ -3,14 +3,14 @@ package Analysis
 import (
 	"errors"
 	"fmt"
+	"github.com/Crypto-ChainSentinel/utils"
 	"math"
 	"math/big"
 
 	"github.com/Crypto-ChainSentinel/modules/ConnManager"
-	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
+	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/parse_engine/comm"
 
-	filter "github.com/Crypto-ChainSentinel/modules/Scanner/Filter"
-	"github.com/Crypto-ChainSentinel/utils"
+	filter "github.com/Crypto-ChainSentinel/modules/scanner/Filter"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 

@@ -1,0 +1,6 @@
+Infura:
+    RPC:  "https://mainnet.infura.io/v3/0d79a9c32c814e1da6133850f6fa1128"
+    WS:   "wss://mainnet.infura.io/ws/v3/0d79a9c32c814e1da6133850f6fa1128"
+
+proxy:  "http://192.168.182.215:7890"
+

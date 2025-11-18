@@ -1,13 +1,13 @@
 package uniswapv2
 
 import (
-	abligens "github.com/Crypto-ChainSentinel/modules/ParserEngine/DexParser/abigens"
-	"github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
+	"github.com/Crypto-ChainSentinel/modules/parse_engine/comm"
+	abligens "github.com/Crypto-ChainSentinel/modules/parse_engine/dex_parser/abigens"
 )
 
 type UniswapV2_SwapEvent struct {
-	common.EventMetadata // 嵌入 BaseEvent 自动实现 UnifiedEvent
-	Event                abligens.UniswappairSwap
+	comm.EventMetadata // 嵌入 BaseEvent 自动实现 UnifiedEvent
+	Event              abligens.UniswappairSwap
 }
 
 type UniswapV2_MintEvent struct {

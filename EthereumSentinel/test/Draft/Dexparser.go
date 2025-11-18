@@ -3,14 +3,14 @@ package scanner
 import (
 	"context"
 	"fmt"
+	"github.com/Crypto-ChainSentinel/utils"
 	"log"
 	"math"
 	"math/big"
 	"strings"
 
-	"github.com/Crypto-ChainSentinel/initialize"
+	"github.com/Crypto-ChainSentinel/init"
 	"github.com/Crypto-ChainSentinel/models"
-	"github.com/Crypto-ChainSentinel/utils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,7 +19,7 @@ import (
 )
 
 func ParseDexInput(tx *types.Transaction, dexname string) models.DeFiTxDetail {
-	cli := initialize.InfuraConn(rpcURL, proxyStr)
+	cli := init.InfuraConn(rpcURL, proxyStr)
 	if dexname == "" {
 		return ParseUniswapV2(*tx, cli)
 	}

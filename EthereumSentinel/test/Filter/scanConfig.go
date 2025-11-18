@@ -1,7 +1,7 @@
 package Filter
 
 import (
-	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
+	ParserEngineCommon "github.com/Crypto-ChainSentinel/modules/parse_engine/comm"
 	"github.com/ethereum/go-ethereum/common"
 )
 

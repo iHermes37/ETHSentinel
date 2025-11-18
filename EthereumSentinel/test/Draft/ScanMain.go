@@ -2,7 +2,7 @@ package scanner
 
 import (
 	"fmt"
-	"github.com/Crypto-ChainSentinel/modules/ParserEngine"
+	"github.com/Crypto-ChainSentinel/modules/parse_engine"
 	"github.com/ethereum/go-ethereum/core/types"
 	"sync"
 )
@@ -99,7 +99,7 @@ type Whalehunter struct {
 func (wh *Whalehunter) ScanTx(tx types.Transaction) string {
 	client := connectionManager.InfuraConn()
 	receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-	parser := ParserEngine.CreateParser()
+	parser := parse_engine.CreateParser()
 
 	//针对大额dex交易
 	result := parser.DexParser().ParseTran(receipt)

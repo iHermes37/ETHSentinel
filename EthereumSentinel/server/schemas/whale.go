@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"time"
 
-	ParserEngine "github.com/Crypto-ChainSentinel/modules/ParserEngine/common"
-	"github.com/Crypto-ChainSentinel/modules/Scanner/Filter"
+	ParserEngine "github.com/Crypto-ChainSentinel/modules/parse_engine/comm"
+	"github.com/Crypto-ChainSentinel/modules/scanner/Filter"
 )
 
 // 可用于动态查询巨鲸信息
