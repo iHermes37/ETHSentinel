@@ -22,6 +22,10 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/bits-and-blooms/bitset v1.20.0 // indirect
+	github.com/btcsuite/btcd v0.24.2 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.1.3 // indirect
+	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -62,6 +66,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
