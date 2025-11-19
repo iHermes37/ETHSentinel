@@ -6,7 +6,7 @@ import (
 
 	abligens "github.com/Crypto-ChainSentinel/modules/parse_engine/dex_parser/abigens"
 	dexcommon "github.com/Crypto-ChainSentinel/modules/parse_engine/comm"
-	connmanager "github.com/Crypto-ChainSentinel/modules/connmanager"
+	connmanager "github.com/Crypto-ChainSentinel/modules/conn"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"

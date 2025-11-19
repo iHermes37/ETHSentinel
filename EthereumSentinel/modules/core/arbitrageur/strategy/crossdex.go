@@ -1,19 +1,17 @@
-package srategy
+package strategy
 
 import (
 	"context"
 	"fmt"
-	"github.com/Crypto-ChainSentinel/modules/core/arbitrageur"
+	"github.com/Crypto-ChainSentinel/db"
 	"log"
 	"math/big"
 	"time"
 
-	"github.com/Crypto-ChainSentinel/init"
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/machinebox/graphql"
 )
 
 type CrossDEXStrategy struct{}
@@ -22,106 +20,17 @@ func (c *CrossDEXStrategy) Name() string {
 	return "CrossDEX"
 }
 
-// getReserves 获取对应交易对的实时储备
-func GetReserves(p *models.CrossPairData) error {
-	client := init.InfuraConn_ws() // 返回 *ethclient.Client
-
-	pairAddress := p.Pair_DexA.PoolAddr
-	//初始化交易对实例
-	pairContract, err := uniswapv2.NewUniswapV2Pair(pairAddress, client)
-	if err != nil {
-		return fmt.Errorf("failed to create pair contract: %w", err)
-	}
-
-	reserves, err := pairContract.GetReserves(&bind.CallOpts{Context: context.Background()})
-	if err != nil {
-		return fmt.Errorf("failed to get reserves: %w", err)
-	}
-
-	// 确认 token0/token1 对应
-	//var reserveA, reserveB *big.Int
-	//if p.Pair_DexA.Token0 == p.Token0 {
-	//	reserveA = reserves.Reserve0
-	//	reserveB = reserves.Reserve1
-	//} else {
-	//	reserveA = reserves.Reserve1
-	//	reserveB = reserves.Reserve0
-	//}
-	p.Pair_DexA.PairReserve.ReserveA0 = reserves.Reserve0
-	p.Pair_DexA.PairReserve.ReserveA1 = reserves.Reserve1
-
-}
-
 func (c *CrossDEXStrategy) Run(stop <-chan struct{}) {
 	// 套利机会通道
 	arbCh := make(chan models.CrossPairData, 100)
 	// ----------------- 套利执行 worker -----------------
 	go func() {
 		for pair := range arbCh {
-			Executearbitrage(pair) // 立即执行套利
+			c.ExecuteArbitrage(pair) // 立即执行套利
 		}
 	}()
-	//----每个发现的套利机会 都会立即通过 Flashbots 原子提交----------
-	//go func() {
-	//	for pair := range arbCh {
-	//		// 不直接执行链上交易，而是通过 Flashbots 提交
-	//		err := SubmitFlashbotsBundle(pair)
-	//		if err != nil {
-	//			log.Println("Flashbots submit failed:", err)
-	//		}
-	//	}
-	//}()
-	// ----------------- 获取交易对 --------------------------------
-	u_V3 := models.Uniswap_V3{
-		GraphQLDEX: models.GraphQLDEX{
-			Client:    graphql.NewClient("https://gateway.thegraph.com/api/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV"),
-			AuthToken: "df5d393ba8219b65e3eea66df2242e6b",
-			QueryString: `
-            query($first: Int!, $skip: Int!) {
-                pools(first: $first, skip: $skip) {
-                    id
-                    token0 { id,symbol }
-                    token1 { id,symbol }
-                    feeTier
-                }
-            }
-        `,
-		},
-	}
-	var resp_univ3 models.Pairs
-	err1 := u_V3.GetPairs(map[string]interface{}{
-		"first": 100,
-		"skip":  0,
-	}, &resp_univ3)
-	if err1 != nil {
-		log.Fatal(err1)
-	}
-
-	var resp_sushi models.Pairs
-	s := models.Sushiswap{
-		GraphQLDEX: models.GraphQLDEX{
-			Client:    graphql.NewClient("https://gateway.thegraph.com/api/subgraphs/id/A4JrrMwrEXsYNAiYw7rWwbHhQZdj6YZg1uVy5wa6g821"),
-			AuthToken: "df5d393ba8219b65e3eea66df2242e6b",
-			QueryString: `
-            query($first: Int!, $skip: Int!) {
-                pools(first: $first, skip: $skip) {
-                    id
-                    token0 { id,symbol }
-                    token1 { id,symbol }
-                }
-            }
-        `,
-		}}
-	err2 := s.GetPairs(map[string]interface{}{
-		"first": 100,
-		"skip":  0,
-	}, &resp_sushi)
-	if err2 != nil {
-		log.Fatal(err2)
-	}
-
 	//----------------------------------------------------------------
-	commonpairs := arbitrageur.GetCommonPairs(resp_univ3, resp_sushi)
+	commonpairs := c.GetCommonPairs(resp_univ3, resp_sushi)
 	for _, pair := range commonpairs {
 		go func(p models.CrossPairData) {
 			ticker := time.NewTicker(200 * time.Millisecond) // 可改为链上事件推送
@@ -144,11 +53,11 @@ func (c *CrossDEXStrategy) Run(stop <-chan struct{}) {
 						continue
 					}
 					// 决定套利方向
-					DecidePullToken(&p)
+					c.DecidePullToken(&p)
 					// 计算套利机会
-					p.Opportunity = CalBN(&p)
+					p.Opportunity = c.CalBN(&p)
 					// 校验并记录结果
-					arbitrageur.ValidateAndRecord(&p)
+					c.ValidateAndRecord(&p)
 					// 发现套利机会 → 立即发送 channel 执行
 					if p.Opportunity.Profit > thresholdProfit {
 						arbCh <- p
@@ -162,8 +71,9 @@ func (c *CrossDEXStrategy) Run(stop <-chan struct{}) {
 	close(arbCh)
 }
 
+// ========================================================================
 // 执行套利合约调用
-func Executearbitrage(pair models.CrossPairData) {
+func (c *CrossDEXStrategy) ExecuteArbitrage(pair models.CrossPairData) {
 	// 1. 初始化客户端
 	client, err := ethclient.Dial("https://mainnet.infura.io/v3/YOUR_INFURA_KEY")
 	if err != nil {
@@ -205,7 +115,8 @@ func Executearbitrage(pair models.CrossPairData) {
 	fmt.Println("Arbitrage tx sent:", tx.Hash().Hex())
 }
 
-func SubmitFlashbotsBundle(pair models.CrossPairData) error {
+// 防止mev
+func (c *CrossDEXStrategy) SubmitFlashbotsBundle(pair models.CrossPairData) error {
 	// 1. 构建交易数据，调用套利合约
 	tx := &flashbots.Transaction{
 		To:    common.HexToAddress(ARBITRAGE_CONTRACT), //指定了交易 目标合约地址，就是你部署的 闪电贷 + 跨 DEX 套利合约 地址
@@ -233,8 +144,8 @@ func SubmitFlashbotsBundle(pair models.CrossPairData) error {
 	return nil
 }
 
-// DecidePullToken 决定套利方向和基准代币
-func DecidePullToken(p *models.CrossPairData) {
+// 决定套利方向和基准代币
+func (c *CrossDEXStrategy) DecidePullToken(p *models.CrossPairData) {
 	// 计算两池价格：price = token1 / token0
 	priceA := new(big.Float).Quo(
 		new(big.Float).SetInt(p.Pair_DexA.PairReserve.Reserve1),
@@ -263,7 +174,7 @@ func DecidePullToken(p *models.CrossPairData) {
 }
 
 // 计算套利利润
-func CalBN(p *models.CrossPairData) models.ArbitrageOpportunity {
+func (c *CrossDEXStrategy) CalBN(p *models.CrossPairData) models.ArbitrageOpportunity {
 	var A0, A1, B0, B1 *big.Int
 	// 根据 PullToken 选择基准代币
 	if p.PullToken == p.Pair_DexA.Token0 {
@@ -308,4 +219,9 @@ func CalBN(p *models.CrossPairData) models.ArbitrageOpportunity {
 		Z:      zInt,
 		Profit: profitInt,
 	}
+}
+
+// 验证并记录
+func (c *CrossDEXStrategy) ValidateAndRecord(p *models.CrossPairData) {
+	db.AddToMysql(p)
 }

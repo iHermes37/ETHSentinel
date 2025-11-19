@@ -1,1 +1,1 @@
-package srategy
+package strategy

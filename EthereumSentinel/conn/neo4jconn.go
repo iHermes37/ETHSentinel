@@ -1,4 +1,4 @@
-package init
+package Conn
 
 import (
 	"context"

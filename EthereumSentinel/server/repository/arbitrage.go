@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/Crypto-ChainSentinel/init"
+	"github.com/Crypto-ChainSentinel/conn"
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/Crypto-ChainSentinel/server/internal/model"
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ type ArbitrageRepository struct {
 
 func NewArbitrageRepository() *ArbitrageRepository {
 	return &ArbitrageRepository{
-		db: init.InitMysql(),
+		db: Conn.InitMysql(),
 	}
 }
 

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/Crypto-ChainSentinel/init"
+	"github.com/Crypto-ChainSentinel/conn"
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/Crypto-ChainSentinel/server/internal/model"
 	"gorm.io/gorm"
@@ -13,7 +13,7 @@ type ContractRepository struct {
 
 func NewContractRepository() *ContractRepository {
 	return &ContractRepository{
-		db: init.InitMysql(),
+		db: Conn.InitMysql(),
 	}
 }
 

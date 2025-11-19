@@ -1,4 +1,4 @@
-package init
+package Conn
 
 import (
 	"github.com/Crypto-ChainSentinel/models"

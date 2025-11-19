@@ -1,4 +1,4 @@
-package ConnManager
+package Conn
 
 import (
 	"golang.org/x/net/proxy"

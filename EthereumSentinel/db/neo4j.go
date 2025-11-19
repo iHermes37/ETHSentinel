@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"github.com/Crypto-ChainSentinel/init"
+	"github.com/Crypto-ChainSentinel/conn"
 	"github.com/Crypto-ChainSentinel/models"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -66,7 +66,7 @@ func (txnode *TxNode) BuildTxnode(tx *types.Transaction,
 
 // 更新插入节点到ne04j图数据库中的
 func UpsertNode(Txnode *models.TxNode) error {
-	driver := init.Neo4jconn()
+	driver := Conn.Neo4jconn()
 	ctx := context.Background()
 	session := driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
