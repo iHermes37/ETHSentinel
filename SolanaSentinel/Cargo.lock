@@ -18,6 +18,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "anyhow",
+ "async-trait",
  "crossbeam-channel",
  "futures-util",
  "reqwest",

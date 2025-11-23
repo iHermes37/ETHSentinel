@@ -45,3 +45,71 @@ pub async fn scan_main(){
     println!("区块已保存到 block.json");
 
 }
+
+
+// ===========================================================
+use std::fmt;
+
+
+
+// 连接类型枚举
+#[derive(Debug, Clone, PartialEq)]
+pub enum Conn {
+    WebSocket(String),  // URL
+    Grpc(String),       // 端点地址
+    Https(String),      // URL
+}
+
+// 自定义错误类型
+#[derive(Debug)]
+pub enum ConnError {
+    InvalidUrl(String),
+    ConnectionFailed(String),
+    UnsupportedProtocol,
+    Timeout,
+}
+impl std::error::Error for ConnError {}
+impl fmt::Display for ConnError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ConnError::InvalidUrl(url) => write!(f, "无效的URL: {}", url),
+            ConnError::ConnectionFailed(msg) => write!(f, "连接失败: {}", msg),
+            ConnError::UnsupportedProtocol => write!(f, "不支持的协议"),
+            ConnError::Timeout => write!(f, "连接超时"),
+        }
+    }
+}
+
+
+// 连接管理器
+pub struct ConnMgr {
+    conn_type: Option<Conn>,
+    is_initialized: bool,
+}
+
+
+impl ConnMgr{
+
+    /// 创建新的连接管理器
+    pub fn new() -> Self {}
+
+    /// 设置连接类型
+    pub fn set_conn(&mut self, conn_type: Conn) -> Result<(), ConnError> {}
+
+    /// 初始化连接
+    pub fn init(&mut self) -> Result<(), ConnError> {}
+
+    /// 发送数据
+    pub fn send_data(&self, data: &[u8]) -> Result<(), ConnError> {}
+
+    /// 获取连接状态
+    pub fn is_connected(&self) -> bool {}
+
+    /// 获取连接
+    pub fn get_conn(&self) -> Option<&Conn> {}
+
+    /// 私有方法
+    fn validate_conn(conn_type: &Conn) -> Result<(), ConnError> {}
+
+}
+

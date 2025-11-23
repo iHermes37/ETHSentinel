@@ -1,3 +1,3 @@
-pub mod scanner;
+pub mod conn_mgr;
 pub mod parse_engine;
-pub mod subscription;
+pub mod core;
