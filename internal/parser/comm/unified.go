@@ -1,111 +1,130 @@
+// Package comm — UnifiedEvent 接口 & 默认实现
+// 重构要点：
+//   - EventMethod 类型从原 EventSig(common.Hash) 修正为语义字符串
+//   - UnifiedEventData 嵌入改为组合，避免方法命名冲突
+//   - 增加 Clone() 和 String() 便于调试
 package comm
 
 import (
-	"github.com/shopspring/decimal"
+	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/shopspring/decimal"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// ─────────────────────────────────────────────
+//  RefToken
+// ─────────────────────────────────────────────
+
+// RefToken 事件涉及的单个代币引用
 type RefToken struct {
-	Name   string  // 事件涉及的代币名称（如果有的话）
-	Amount big.Int // 事件涉及的以太坊代币数量（单位: wei）
+	Name   string   // 代币符号，如 USDC / WETH
+	Amount *big.Int // 数量（wei）
 }
 
-type BaseEvent struct {
-	EventTypeVal EventMethod    // 事件类型，例如 Swap、Deposit、Withdraw 等
-	From         common.Address //事件发起地址
-	RefTokens    []RefToken
-	// PriceVal     []decimal.Decimal // 事件涉及的一个代币价格（如果有的话，单位: USD）
-	RealValueVal []decimal.Decimal // 事件涉及的代币的实际价值（如果有的话，单位: USD）
-}
+// ─────────────────────────────────────────────
+//  BaseEvent & EventMetadata
+// ─────────────────────────────────────────────
 
-// UnifiedEventData 封装以太坊链上事件的基础信息，用于统一事件处理
+// EventMetadata 链上定位元信息（不含业务数据）
 type EventMetadata struct {
-	TxHashVal    common.Hash  // 交易哈希（唯一标识交易）
-	ProtocolType ProtocolType //协议类型
-	ProtocolImpl ProtocolImpl // 协议具体，例如 UniswapV2、Sushiswap 等
-	AgeVal       time.Time    // 事件发生时间
-	// FromVal      tools.Address
-	ToVal common.Address
-
-	BlockNumberVal      *big.Int // 区块高度，用于排序和定位交易所在区块
-	OuterIndexVal       uint     // log 在交易中的索引
-	TransactionIndexVal uint     // 交易在区块中的索引位置，用于区分同区块内多笔交易
+	TxHash           common.Hash    // 交易哈希
+	ProtocolTypeVal  ProtocolType   // 协议大类
+	ProtocolImplVal  ProtocolImpl   // 具体实现
+	Age              time.Time      // 事件时间
+	To               common.Address // 合约地址
+	BlockNumber      *big.Int       // 区块高度
+	OuterIndex       uint           // log 在 tx 中的下标
+	TransactionIndex uint           // tx 在 block 中的下标
 }
 
-// UnifiedEvent 接口
+// BaseEvent 核心业务字段（协议无关）
+type BaseEvent struct {
+	EventType  EventMethod       // 事件语义，如 Swap / Transfer
+	From       common.Address    // 发起地址
+	RefTokens  []RefToken        // 涉及的代币列表
+	RealValues []decimal.Decimal // 各代币的 USD 价值（可选）
+}
+
+// ─────────────────────────────────────────────
+//  UnifiedEvent 接口
+// ─────────────────────────────────────────────
+
+// UnifiedEvent 所有解析结果的统一接口，对上层屏蔽协议细节。
 type UnifiedEvent interface {
-	TxHash() common.Hash            //以太坊的 tx hash，用于唯一标识触发事件的交易
-	EventType() EventMethod         //事件类型，比如 Swap、Deposit、Withdraw 等
-	ProtocolType() ProtocolTypeName //
-	ProtocolImpl() ProtocolImplName //协议类型，比如 UniswapV2、Sushiswap 等
-	Age() time.Time                 //事件发生的时间
+	// 链上定位
+	GetTxHash() common.Hash
+	GetBlockNumber() *big.Int
+	GetTransactionIndex() uint
+	GetOuterIndex() uint
+	GetAge() time.Time
+	GetTo() common.Address
 
-	To() common.Address //事件接收地址
+	// 协议信息
+	GetProtocolType() ProtocolType
+	GetProtocolImpl() ProtocolImpl
 
-	BlockNumber() *big.Int  //区块高度
-	OuterIndex() uint       //log 在交易中的索引
-	TransactionIndex() uint //Ethereum 交易在区块中的索引
+	// 事件业务字段
+	GetEventType() EventMethod
+	GetBase() BaseEvent
 
-	CoreEvent() BaseEvent // 返回基础事件信息
-	Detail() any          // 双/多资产信息，具体结构根据 EventType
+	// 详情（类型断言后使用，例如 *SwapData / *TransferData）
+	GetDetail() any
 
-	// Clone() UnifiedEvent
-	//HandleMs() int64      // 事件处理耗时（毫秒）
-	//SetHandleMs(ms int64) // 设置处理耗时
+	// 调试
+	String() string
 }
 
+// ─────────────────────────────────────────────
+//  UnifiedEventData — 默认实现
+// ─────────────────────────────────────────────
+
+// UnifiedEventData 是 UnifiedEvent 的通用值对象实现。
+// 使用组合而非嵌入指针，避免 nil 解引用。
 type UnifiedEventData struct {
-	*EventMetadata
-	*BaseEvent
-	DetailVal any // 双/多资产信息，具体结构根据 EventType
+	Metadata  EventMetadata
+	Base      BaseEvent
+	DetailVal any // *SwapData / *TransferData / …
 }
 
-func (b *UnifiedEventData) EventType() EventSig        { return b.BaseEvent.EventTypeVal }
-func (b *UnifiedEventData) TxHash() common.Hash        { return b.EventMetadata.TxHashVal }
-func (b *UnifiedEventData) ProtocolType() ProtocolType { return b.EventMetadata.ProtocolType }
-func (b *UnifiedEventData) ProtocolImpl() ProtocolImpl { return b.EventMetadata.ProtocolImpl }
-func (b *UnifiedEventData) Age() time.Time             { return b.EventMetadata.AgeVal }
+// ── 链上定位 ──────────────────────────────────
 
-// func (b *UnifiedEventData) From() tools.Address       { return b.EventMetadata.ToVal }
-func (b *UnifiedEventData) To() common.Address     { return b.EventMetadata.ToVal }
-func (b *UnifiedEventData) BlockNumber() *big.Int  { return b.EventMetadata.BlockNumberVal }
-func (b *UnifiedEventData) OuterIndex() uint       { return b.EventMetadata.OuterIndexVal }
-func (b *UnifiedEventData) TransactionIndex() uint { return b.EventMetadata.TransactionIndexVal }
+func (e *UnifiedEventData) GetTxHash() common.Hash        { return e.Metadata.TxHash }
+func (e *UnifiedEventData) GetBlockNumber() *big.Int      { return e.Metadata.BlockNumber }
+func (e *UnifiedEventData) GetTransactionIndex() uint     { return e.Metadata.TransactionIndex }
+func (e *UnifiedEventData) GetOuterIndex() uint           { return e.Metadata.OuterIndex }
+func (e *UnifiedEventData) GetAge() time.Time             { return e.Metadata.Age }
+func (e *UnifiedEventData) GetTo() common.Address         { return e.Metadata.To }
 
-func (b *UnifiedEventData) Detail() any { return b.DetailVal }
-func (b *UnifiedEventData) CoreEvent() BaseEvent {
-	return *b.BaseEvent
+// ── 协议信息 ──────────────────────────────────
+
+func (e *UnifiedEventData) GetProtocolType() ProtocolType { return e.Metadata.ProtocolTypeVal }
+func (e *UnifiedEventData) GetProtocolImpl() ProtocolImpl { return e.Metadata.ProtocolImplVal }
+
+// ── 事件业务字段 ──────────────────────────────
+
+func (e *UnifiedEventData) GetEventType() EventMethod { return e.Base.EventType }
+func (e *UnifiedEventData) GetBase() BaseEvent        { return e.Base }
+func (e *UnifiedEventData) GetDetail() any            { return e.DetailVal }
+
+// ── 调试 ──────────────────────────────────────
+
+func (e *UnifiedEventData) String() string {
+	return fmt.Sprintf(
+		"[%s/%s] %s tx=%s block=%s",
+		e.Metadata.ProtocolTypeVal,
+		e.Metadata.ProtocolImplVal,
+		e.Base.EventType,
+		e.Metadata.TxHash.Hex(),
+		e.Metadata.BlockNumber,
+	)
 }
 
-// func (b *UnifiedEventData) Clone() UnifiedEvent    { clone := *b; return &clone }
-
-//type TokenEvent struct {
-//	Protocol     string   // ERC20 or ERC721
-//	EventType    string   // Transfer / Approval / ApprovalForAll
-//	TokenAddress string   // 合约地址
-//	Operator     string   // 操作者地址 (spender/operator)
-//	From         string   // 转出地址
-//	To           string   // 转入地址
-//	TokenId      *big.Int // NFT ID (ERC721 专用，ERC20 为 nil)
-//	Amount       *big.Int // 转账数量 (ERC20 专用，ERC721 固定为 1)
-//	Approved     *bool    // 是否授权 (ERC721 的 setApprovalForAll 专用)
-//	TxHash       string   // 交易哈希
-//	BlockNumber  uint64   // 区块高度
-//}
-
-type MethodName string
-
-const (
-	Transfer     MethodName = "transfer"
-	TransferFrom MethodName = "transferFrom"
-	Approve      MethodName = "approve"
-)
-
-type Protocol string
-
-const (
-	ERC20 Protocol = "ERC20"
-)
+// Clone 浅拷贝，用于并发场景
+func (e *UnifiedEventData) Clone() *UnifiedEventData {
+	cp := *e
+	return &cp
+}

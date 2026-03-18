@@ -1,31 +1,19 @@
-package ERC
+// Package token 统一注册所有 Token 协议实现（ERC20 / ERC721）
+package token
 
 import (
-	"sync"
-
-	"github.com/Crypto-ChainSentinel/internal/parser/erc_parser/erccommon"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ETHSentinel/internal/parser/comm"
+	"github.com/ETHSentinel/internal/parser/token/erc20"
+	"github.com/ETHSentinel/internal/parser/token/erc721"
 )
 
-type ProtocolParser struct {
-	protocolName erccommon.Protocol
-	TokenAddrs   map[common.Address]erccommon.Protocol
-	Configs      map[erccommon.MethodName]erccommon.EventParserFunc
-}
-
-var (
-	ERCParseConfigManager map[erccommon.Protocol]ProtocolParser
-	once                  sync.Once
-)
-
-func InitERCParser() {
-	once.Do(func() {
-		ERCParseConfigManager = make(map[erccommon.Protocol]ProtocolParser)
-		// UniswapV2Protocol
-		ERCParseConfigManager[erccommon.ERC20] = ProtocolParser{
-			erccommon.ERC20,
-			TokenAddr,
-			ERC20EventsConfig,
-		}
-	})
+// RegisterAll 将所有 Token 实现注册到 mgr 中
+func RegisterAll(mgr *comm.ProtocolImplManager) error {
+	if err := mgr.RegisterStrategy(comm.ProtocolImplERC20, erc20.NewParser()); err != nil {
+		return err
+	}
+	if err := mgr.RegisterStrategy(comm.ProtocolImplERC721, erc721.NewParser()); err != nil {
+		return err
+	}
+	return nil
 }

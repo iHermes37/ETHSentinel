@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package sentinel.v1;
+
+option go_package = "github.com/ETHSentinel/gen/sentinel/v1;sentinelv1";
+
+import "sentinel/v1/events.proto";
+import "google/protobuf/empty.proto";
+
+// ─────────────────────────────────────────────
+//  请求 / 响应消息
+// ─────────────────────────────────────────────
+
+// ScanBlockRequest 扫单块
+message ScanBlockRequest {
+  string                    block_number       = 1; // big.Int → string
+  repeated ProtocolSelector selected_protocols = 2;
+}
+
+// ScanBlocksRequest 扫区间
+message ScanBlocksRequest {
+  string                    start_block        = 1;
+  string                    end_block          = 2;
+  repeated ProtocolSelector selected_protocols = 3;
+  int32                     worker_pool_size   = 4; // 默认 100
+}
+
+// ProtocolSelector 选择要解析的协议和事件
+message ProtocolSelector {
+  ProtocolType              protocol_type  = 1;
+  ProtocolImpl              protocol_impl  = 2;
+  repeated EventMethod      events         = 3; // 空 = 全部事件
+}
+
+// ScanBlockResponse 单块扫描结果
+message ScanBlockResponse {
+  string                block_number = 1;
+  repeated UnifiedEvent events       = 2;
+  uint32                tx_count     = 3;
+  uint32                event_count  = 4;
+}
+
+// SubscribeRequest 实时订阅新块
+message SubscribeRequest {
+  repeated ProtocolSelector selected_protocols = 1;
+  FilterConfig              filter             = 2;
+}
+
+// FilterConfig 过滤器配置
+message FilterConfig {
+  string min_usd_value = 1; // 最小 USD 价值（空 = 不过滤）
+  repeated string watch_addresses = 2; // 监控地址白名单
+  repeated ProtocolType protocol_types = 3;
+}
+
+// ─────────────────────────────────────────────
+//  Whale 服务相关
+// ─────────────────────────────────────────────
+message WhaleScanRequest {
+  string start_block   = 1;
+  string end_block     = 2;
+  string threshold_usd = 3; // 识别为鲸鱼的最小 USD 持仓
+}
+
+message WhaleEvent {
+  string address    = 1;
+  string token      = 2;
+  string amount_usd = 3;
+  string event_type = 4; // large_buy / large_sell / lp_remove / etc.
+  UnifiedEvent source_event = 5;
+}
+
+// ─────────────────────────────────────────────
+//  SentinelService — 核心 SDK 服务
+// ─────────────────────────────────────────────
+service SentinelService {
+
+  // ── 扫描 ─────────────────────────────────
+
+  // 扫描单个区块，返回解析后的统一事件列表
+  rpc ScanBlock(ScanBlockRequest) returns (ScanBlockResponse);
+
+  // 扫描区块区间，服务端流式返回每个块的事件
+  rpc ScanBlocks(ScanBlocksRequest) returns (stream ScanBlockResponse);
+
+  // 实时订阅新块事件（服务端推送）
+  rpc SubscribeBlocks(SubscribeRequest) returns (stream ScanBlockResponse);
+
+  // ── 鲸鱼监控 ─────────────────────────────
+
+  // 扫描历史区块，识别鲸鱼事件（服务端流）
+  rpc ScanWhaleEvents(WhaleScanRequest) returns (stream WhaleEvent);
+
+  // 实时订阅鲸鱼活动
+  rpc SubscribeWhaleEvents(SubscribeRequest) returns (stream WhaleEvent);
+
+  // ── 健康检查 ─────────────────────────────
+  rpc HealthCheck(google.protobuf.Empty) returns (HealthResponse);
+}
+
+message HealthResponse {
+  bool   healthy         = 1;
+  string node_endpoint   = 2;
+  string latest_block    = 3;
+}

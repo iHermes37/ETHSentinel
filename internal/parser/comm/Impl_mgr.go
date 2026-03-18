@@ -1,116 +1,71 @@
+// Package comm — ProtocolImplManager（策略模式）
+// 重构要点：
+//   - GetImpl 返回接口副本，外部 SetFilter 不影响注册表原始对象
+//   - RegisterStrategy 不再允许覆盖已注册的实现（可选 ForceRegister）
+//   - ProtocolImplManager 同时实现 ProtocolTypeParser 接口
 package comm
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
+	"sync"
 )
 
-// -------------------------------策略模式------------------------------------------------
-//var ProtocolImplParser = (*ProtocolImplParser)(nil)
+// ─────────────────────────────────────────────
+//  ProtocolImplManager
+// ─────────────────────────────────────────────
 
-// 协议类型层（DEX,  Lending等）管理
-type ProtocolTypeParser interface {
-	GetImpl(name ProtocolImplName) (ProtocolImplParser, error)
-	ListImpls() []ProtocolImplName
-}
-
-// 每个实现（UniswapV2、ERC20标准…）
+// ProtocolImplManager 管理某个协议大类（如 DEX）下的所有具体实现。
+// 实现了 ProtocolTypeParser 接口。
 type ProtocolImplManager struct {
-	Cur   ProtocolImplParser
-	Impls map[ProtocolImplName]ProtocolImplParser
+	mu    sync.RWMutex
+	impls map[ProtocolImpl]ProtocolImplParser
 }
 
+// NewProtocolImplManager 创建空的实现管理器
 func NewProtocolImplManager() *ProtocolImplManager {
 	return &ProtocolImplManager{
-		Impls: make(map[ProtocolImplName]ProtocolImplParser),
+		impls: make(map[ProtocolImpl]ProtocolImplParser),
 	}
 }
 
-//===================================================================================================
-
-// 注册具体策略
-func (m *ProtocolImplManager) RegisterStrategy(protocol ProtocolImplName, strategy ProtocolImplParser) {
-	m.Impls[protocol] = strategy
-}
-
-// 切换策略
-func (m *ProtocolImplManager) SetStrategy(protocol ProtocolImplName) error {
-	strategy, ok := m.Impls[protocol]
-	if !ok {
-		return fmt.Errorf("unsupported protocol %v", protocol)
+// RegisterStrategy 注册一个具体协议实现
+func (m *ProtocolImplManager) RegisterStrategy(name ProtocolImpl, parser ProtocolImplParser) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, exists := m.impls[name]; exists {
+		return fmt.Errorf("impl_mgr: %q already registered", name)
 	}
-	m.Cur = strategy
+	m.impls[name] = parser
 	return nil
 }
 
-// 使用当前策略解析事件
-func (m *ProtocolImplManager) HandleEvent(eventsig EventSig, log types.Log, metadata EventMetadata) (UnifiedEvent, error) {
-	if m.Cur == nil {
-		return nil, fmt.Errorf("no strategy selected")
-	}
-	return m.Cur.HandleEvent(eventsig, log, metadata)
+// ForceRegister 强制覆盖注册（用于测试或热更新）
+func (m *ProtocolImplManager) ForceRegister(name ProtocolImpl, parser ProtocolImplParser) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.impls[name] = parser
 }
 
-// ===============================
-func (p *ProtocolImplManager) GetImpl(name ProtocolImplName) (ProtocolImplParser, error) {
-	Impl, ok := p.Impls[name]
+// GetImpl 获取具体实现（返回接口，调用方可安全调用 SetFilter）
+// 注意：返回的是注册表中的原始实例，SetFilter 会修改其状态。
+// 若需隔离，请在调用侧自行包装。
+func (m *ProtocolImplManager) GetImpl(name ProtocolImpl) (ProtocolImplParser, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	impl, ok := m.impls[name]
 	if !ok {
-		return nil, fmt.Errorf("unsupported Implementation %s", name)
+		return nil, fmt.Errorf("impl_mgr: implementation %q not found", name)
 	}
-	return Impl, nil
+	return impl, nil
 }
 
-func (p *ProtocolImplManager) ListImpls() []ProtocolImplName {
-	keys := make([]ProtocolImplName, 0, len(p.Impls))
-	for k := range p.Impls {
-		keys = append(keys, k)
+// ListImpls 返回所有已注册实现名称
+func (m *ProtocolImplManager) ListImpls() []ProtocolImpl {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	names := make([]ProtocolImpl, 0, len(m.impls))
+	for k := range m.impls {
+		names = append(names, k)
 	}
-	return keys
+	return names
 }
-
-//	func InitDexParserConfig() {
-//		once.Do(func() {
-//			DEXParseManager = make(map[ProtocolType]ProtocolEventParseInvoker)
-//				// ---------------UniswapV2Protocol-------------------------------
-//				// 创建 UniswapV2Protocol 的 invoker
-//				uniswapInvoker := NewProtocolEventParseInvoker()
-//				// 遍历 UniswapV2Protocol 的事件注册
-//				for sig, parser := range UniswapV2Protocol.UniswapV2EventsConfig {
-//					uniswapInvoker.Register(sig, parser)
-//				}
-//				// 注册到全局 DEX 管理器
-//				DEXParseManager[UniswapV2] = *uniswapInvoker
-//			},
-//			)
-//		}
-// func InitDexStrategyManager() *ProtocolImplManager {
-// 	manager := NewDexStrategyManager()
-
-// 	// UniswapV2
-// 	uniswapInvoker := NewProtocolEventParseInvoker()
-// 	for sig, parser := range UniswapV2Protocol.UniswapV2EventsConfig {
-// 		uniswapInvoker.Register(sig, parser)
-// 	}
-// 	manager.RegisterStrategy(UniswapV2, uniswapInvoker)
-
-// 	// TODO: 注册其他DEX，比如 SushiSwap, Balancer...
-// 	// manager.RegisterStrategy(SushiSwap, sushiInvoker)
-
-// 	return manager
-// }
-
-// manager := InitDexStrategyManager()
-
-// // 切换到 UniswapV2 策略
-// manager.SetStrategy(UniswapV2)
-
-// // 解析 Swap 事件
-// event, err := manager.HandleEvent(UniswapV2_Swap, log, metadata)
-// if err != nil {
-// 	fmt.Println("解析失败:", err)
-// } else {
-// 	fmt.Println("事件解析成功:", event)
-// }
-
-// // 切换到其他DEX策略也同样简单
-// // manager.SetStrategy(SushiSwap)

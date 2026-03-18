@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package sentinel.v1;
+
+option go_package = "github.com/ETHSentinel/gen/sentinel/v1;sentinelv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─────────────────────────────────────────────
+//  枚举：协议类型 / 协议实现 / 事件方法
+// ─────────────────────────────────────────────
+
+enum ProtocolType {
+  PROTOCOL_TYPE_UNSPECIFIED = 0;
+  PROTOCOL_TYPE_DEX         = 1;
+  PROTOCOL_TYPE_TOKEN       = 2;
+  PROTOCOL_TYPE_LENDING     = 3;
+}
+
+enum ProtocolImpl {
+  PROTOCOL_IMPL_UNSPECIFIED = 0;
+  PROTOCOL_IMPL_UNISWAP_V2  = 1;
+  PROTOCOL_IMPL_SUSHISWAP   = 2;
+  PROTOCOL_IMPL_ERC20       = 3;
+  PROTOCOL_IMPL_ERC721      = 4;
+  PROTOCOL_IMPL_AAVE        = 5;
+}
+
+enum EventMethod {
+  EVENT_METHOD_UNSPECIFIED = 0;
+  EVENT_METHOD_SWAP        = 1;
+  EVENT_METHOD_TRANSFER    = 2;
+  EVENT_METHOD_DEPOSIT     = 3;
+  EVENT_METHOD_WITHDRAW    = 4;
+  EVENT_METHOD_FLASHLOAN   = 5;
+  EVENT_METHOD_APPROVAL    = 6;
+}
+
+// ─────────────────────────────────────────────
+//  统一事件结构
+// ─────────────────────────────────────────────
+
+// RefToken 单个代币引用（名称 + 数量）
+message RefToken {
+  string name   = 1; // 代币符号，如 USDC / WETH
+  string amount = 2; // wei 字符串，避免精度丢失
+}
+
+// EventMetadata 链上定位信息
+message EventMetadata {
+  string                    tx_hash           = 1;
+  ProtocolType              protocol_type     = 2;
+  ProtocolImpl              protocol_impl     = 3;
+  google.protobuf.Timestamp age               = 4;
+  string                    to                = 5;  // 合约地址
+  string                    block_number      = 6;  // big.Int → string
+  uint32                    outer_index       = 7;  // log index in tx
+  uint32                    transaction_index = 8;  // tx index in block
+}
+
+// BaseEvent 核心业务字段
+message BaseEvent {
+  EventMethod       event_type  = 1;
+  string            from        = 2;  // 发起地址
+  repeated RefToken ref_tokens  = 3;
+  repeated string   real_values = 4;  // USD 价值，decimal string
+}
+
+// SwapDetail UniswapV2 Swap 详情
+message SwapDetail {
+  string from_token   = 1;
+  string to_token     = 2;
+  string from_amount  = 3;
+  string to_amount    = 4;
+  string sender       = 5;
+  string recipient    = 6;
+}
+
+// TransferDetail ERC20/ETH 转账详情
+message TransferDetail {
+  string token   = 1;
+  string from    = 2;
+  string to      = 3;
+  string amount  = 4;
+}
+
+// UnifiedEvent 最终对外的统一事件消息
+message UnifiedEvent {
+  EventMetadata metadata   = 1;
+  BaseEvent     base       = 2;
+  oneof detail {
+    SwapDetail     swap     = 10;
+    TransferDetail transfer = 11;
+    // 未来可扩展：FlashLoanDetail, DepositDetail ...
+  }
+}
