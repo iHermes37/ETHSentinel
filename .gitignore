@@ -1,6 +1,12 @@
 # 默认忽略的文件
 SolanaSentinel/target/
-./vscode
+
+.vscode/*
+.idea/
+
+test/*
+
+
 /shelf/
 /workspace.xml
 # 基于编辑器的 HTTP 客户端请求
@@ -8,3 +14,4 @@ SolanaSentinel/target/
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+
