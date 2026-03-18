@@ -20,6 +20,12 @@ type options struct {
 	// 日志
 	logger *zap.Logger
 
+	// 多链
+	chainID  uint64
+
+	// 钱包
+	mnemonic string
+
 	// gRPC（当使用远程模式时）
 	grpcAddr    string
 	grpcTimeout time.Duration
@@ -29,6 +35,7 @@ func defaultOptions() *options {
 	logger, _ := zap.NewProduction()
 	return &options{
 		workerPoolSize: 100,
+		chainID:        1, // ETH 主网
 		dialTimeout:    10 * time.Second,
 		grpcTimeout:    30 * time.Second,
 		logger:         logger,
@@ -71,4 +78,14 @@ func WithGRPCAddr(addr string) Option {
 // WithDialTimeout 设置连接超时
 func WithDialTimeout(d time.Duration) Option {
 	return func(o *options) { o.dialTimeout = d }
+}
+
+// WithChainID 设置目标链 ID（默认 1 = ETH 主网）
+func WithChainID(id uint64) Option {
+	return func(o *options) { o.chainID = id }
+}
+
+// WithMnemonic 设置钱包助记词（用于 Wallet 功能）
+func WithMnemonic(mnemonic string) Option {
+	return func(o *options) { o.mnemonic = mnemonic }
 }

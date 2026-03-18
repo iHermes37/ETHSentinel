@@ -5,33 +5,35 @@ WORKDIR /app
 
 # 安装 protoc 和插件
 RUN apk add --no-cache protobuf protobuf-dev && \
-    go install google.golang.org/protobuf/test/protoc-gen-go@latest && \
-    go install google.golang.org/grpc/test/protoc-gen-go-grpc@latest
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
 
-# 生成 proto 代码
+# 改动一：proto_path 改为 server/proto
+# 改动二：新增 mempool.proto 和 wallet.proto
 RUN protoc \
-    --proto_path=proto \
+    --proto_path=server/proto \
     --go_out=gen \
     --go_opt=paths=source_relative \
     --go-grpc_out=gen \
     --go-grpc_opt=paths=source_relative \
-    proto/sentinel/v1/events.proto \
-    proto/sentinel/v1/sentinel.proto
+    server/proto/sentinel/v1/events.proto \
+    server/proto/sentinel/v1/sentinel.proto \
+    server/proto/sentinel/v1/mempool.proto \
+    server/proto/sentinel/v1/wallet.proto
 
-# 编译二进制
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /sentinel ./test/server
+# 改动三：入口改为 ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /sentinel ./cmd/server
 
 # ── 阶段 2：精简运行镜像 ────────────────────────
 FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 COPY --from=builder /sentinel /sentinel
-COPY config/ /app/config/
 
 EXPOSE 50051
 

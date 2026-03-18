@@ -1,42 +1,33 @@
-// Package sentinel 是 ETH Sentinel 的对外入口。
-//
-// 两种使用模式：
-//
-//  1. 嵌入模式（直接集成到业务进程）：
-//     client, err := client.New(client.WithRPCURL("https://..."), client.WithWSURL("wss://..."))
-//
-//  2. 远程 gRPC 模式（连接独立部署的 Sentinel Server）：
-//     client, err := client.NewRemote("localhost:50051")
-//
-// 两种模式暴露完全相同的 API 接口。
+// Package sentinel 是 ETH Sentinel 的对外 SDK 入口。
 package sentinel
 
 import (
 	"context"
-	"github.com/ETHSentinel/internal/parser"
-	"github.com/ETHSentinel/internal/parser/comm"
-	"github.com/ETHSentinel/internal/scanner"
+	"fmt"
 	"math/big"
 
 	sentinelv1 "github.com/ETHSentinel/gen/sentinel/v1"
+	"github.com/ETHSentinel/internal/chain"
 	"github.com/ETHSentinel/internal/conn"
+	"github.com/ETHSentinel/internal/parser"
+	"github.com/ETHSentinel/internal/parser/comm"
+	"github.com/ETHSentinel/internal/scanner"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// ─────────────────────────────────────────────
-//  公开类型别名（调用方无需 import internal）
-// ─────────────────────────────────────────────
-
-// Event 统一链上事件（等同 comm.UnifiedEvent）
 type Event = comm.UnifiedEvent
-
-// ParserCfg 解析配置（等同 comm.ParserCfg）
 type ParserCfg = comm.ParserCfg
+type SwapData = comm.SwapData
+type TransferData = comm.TransferData
 
-// ProtocolType / ProtocolImpl / EventMethod 常量透出
 const (
+	ChainETH      = chain.ChainETH
+	ChainBSC      = chain.ChainBSC
+	ChainPolygon  = chain.ChainPolygon
+	ChainArbitrum = chain.ChainArbitrum
+
 	ProtocolTypeDEX     = comm.ProtocolTypeDEX
 	ProtocolTypeToken   = comm.ProtocolTypeToken
 	ProtocolTypeLending = comm.ProtocolTypeLending
@@ -49,86 +40,81 @@ const (
 	EventMethodTransfer = comm.EventMethodTransfer
 )
 
-// ─────────────────────────────────────────────
-//  ScanResult — 扫描结果
-// ─────────────────────────────────────────────
-
-// ScanResult 单块扫描结果
 type ScanResult struct {
 	BlockNumber *big.Int
+	ChainID     uint64
 	Events      []Event
 	TxCount     int
 }
 
-// ─────────────────────────────────────────────
-//  Client 接口
-// ─────────────────────────────────────────────
-
-// Client SDK 核心接口
 type Client interface {
-	// ScanBlock 扫描单个区块
 	ScanBlock(ctx context.Context, blockNumber *big.Int, cfg ParserCfg) (*ScanResult, error)
-
-	// ScanBlocks 扫描区间，流式返回每个块的结果
 	ScanBlocks(ctx context.Context, start, end *big.Int, cfg ParserCfg) (<-chan *ScanResult, error)
-
-	// SubscribeBlocks 实时订阅新块事件（需要 WS 连接）
 	SubscribeBlocks(ctx context.Context, cfg ParserCfg) (<-chan *ScanResult, error)
-
-	// Close 释放资源
+	Mempool() *MempoolClient
+	Wallet() (*WalletClient, error)
 	Close() error
 }
 
-// ─────────────────────────────────────────────
-//  localClient — 嵌入模式实现
-// ─────────────────────────────────────────────
+// ── localClient ──────────────────────────────
 
 type localClient struct {
-	sc      *scanner.Scanner
-	connMgr *conn.Manager
-	opts    *options
-	logger  *zap.Logger
+	sc       *scanner.Scanner
+	pool     *conn.MultiChainPool
+	connMgr  *conn.Manager
+	chainObj chain.Chain
+	opts     *options
+	logger   *zap.Logger
 }
 
-// New 创建嵌入模式 SDK 客户端（直接连接以太坊节点）
 func New(opts ...Option) (Client, error) {
 	o := defaultOptions()
 	for _, opt := range opts {
 		opt(o)
 	}
-
 	logger := o.logger
 
-	// 初始化连接管理器
-	connMgr := conn.NewManager(logger)
+	chainObj, err := chain.Get(chain.ChainID(o.chainID))
+	if err != nil {
+		return nil, fmt.Errorf("sentinel: %w", err)
+	}
+
+	pool := conn.NewMultiChainPool(logger)
 	nodeCfg := &conn.NodeConfig{
-		Name:     "default",
-		RPCURL:   o.rpcURL,
-		WSURL:    o.wsURL,
+		Name:     chainObj.Name(),
+		RPCURL:   chainObj.DefaultRPCURL(),
+		WSURL:    chainObj.DefaultWSURL(),
 		ProxyURL: o.proxyURL,
 	}
+	if o.rpcURL != "" {
+		nodeCfg.RPCURL = o.rpcURL
+	}
+	if o.wsURL != "" {
+		nodeCfg.WSURL = o.wsURL
+	}
+	pool.RegisterChain(chainObj, nodeCfg)
+
+	connMgr := conn.NewManager(logger)
 	connMgr.Register(nodeCfg)
 
-	// 获取 RPC 连接
 	ctx := context.Background()
-	ethClient, err := connMgr.Get(ctx, "default", conn.MethodRPC)
+	ethClient, err := connMgr.Get(ctx, chainObj.Name(), conn.MethodRPC)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sentinel: connect rpc: %w", err)
 	}
 
-	// 初始化解析引擎
 	engine, err := parser.NewEngine(ethClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sentinel: init engine: %w", err)
 	}
 
-	sc := scanner.New(ethClient, engine, logger)
-
 	return &localClient{
-		sc:      sc,
-		connMgr: connMgr,
-		opts:    o,
-		logger:  logger,
+		sc:       scanner.New(ethClient, engine, logger),
+		pool:     pool,
+		connMgr:  connMgr,
+		chainObj: chainObj,
+		opts:     o,
+		logger:   logger,
 	}, nil
 }
 
@@ -141,19 +127,12 @@ func (c *localClient) ScanBlock(ctx context.Context, blockNumber *big.Int, cfg P
 	if err != nil {
 		return nil, err
 	}
-	return &ScanResult{
-		BlockNumber: res.BlockNumber,
-		Events:      res.Events,
-		TxCount:     res.TxCount,
-	}, nil
+	return &ScanResult{BlockNumber: res.BlockNumber, ChainID: c.opts.chainID, Events: res.Events, TxCount: res.TxCount}, nil
 }
 
 func (c *localClient) ScanBlocks(ctx context.Context, start, end *big.Int, cfg ParserCfg) (<-chan *ScanResult, error) {
 	ch, err := c.sc.ScanBlocks(ctx, scanner.ScanBlocksCfg{
-		StartBlock:     start,
-		EndBlock:       end,
-		ParserCfg:      cfg,
-		WorkerPoolSize: c.opts.workerPoolSize,
+		StartBlock: start, EndBlock: end, ParserCfg: cfg, WorkerPoolSize: c.opts.workerPoolSize,
 	})
 	if err != nil {
 		return nil, err
@@ -162,116 +141,93 @@ func (c *localClient) ScanBlocks(ctx context.Context, start, end *big.Int, cfg P
 	go func() {
 		defer close(out)
 		for res := range ch {
-			out <- &ScanResult{
-				BlockNumber: res.BlockNumber,
-				Events:      res.Events,
-				TxCount:     res.TxCount,
-			}
+			out <- &ScanResult{BlockNumber: res.BlockNumber, ChainID: c.opts.chainID, Events: res.Events, TxCount: res.TxCount}
 		}
 	}()
 	return out, nil
 }
 
-func (c *localClient) SubscribeBlocks(ctx context.Context, cfg ParserCfg) (<-chan *ScanResult, error) {
-	// TODO: 使用 ethclient.SubscribeNewHead + ScanBlock 实现实时订阅
-	return nil, nil
+func (c *localClient) SubscribeBlocks(_ context.Context, _ ParserCfg) (<-chan *ScanResult, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+func (c *localClient) Mempool() *MempoolClient {
+	wsURL := c.opts.wsURL
+	if wsURL == "" {
+		wsURL = c.chainObj.DefaultWSURL()
+	}
+	wsClient, _ := c.pool.GetWS(context.Background(), c.chainObj.ID())
+	return newMempoolClient(wsURL, wsClient, c.chainObj, c.logger)
+}
+
+func (c *localClient) Wallet() (*WalletClient, error) {
+	if c.opts.mnemonic == "" {
+		return nil, fmt.Errorf("sentinel: wallet requires mnemonic, use WithMnemonic()")
+	}
+	rpcClient, err := c.pool.GetRPC(context.Background(), c.chainObj.ID())
+	if err != nil {
+		return nil, err
+	}
+	return newWalletClient(c.opts.mnemonic, rpcClient, new(big.Int).SetUint64(c.opts.chainID), c.logger)
 }
 
 func (c *localClient) Close() error {
+	c.pool.Close()
 	c.connMgr.Close()
 	return nil
 }
 
-// ─────────────────────────────────────────────
-//  remoteClient — gRPC 远程模式实现
-// ─────────────────────────────────────────────
+// ── remoteClient ─────────────────────────────
 
 type remoteClient struct {
-	conn   *grpc.ClientConn
-	stub   sentinelv1.SentinelServiceClient
-	opts   *options
-	logger *zap.Logger
+	grpcConn     *grpc.ClientConn
+	sentinelStub sentinelv1.SentinelServiceClient
+	mempoolStub  sentinelv1.MempoolServiceClient
+	walletStub   sentinelv1.WalletServiceClient
+	opts         *options
+	logger       *zap.Logger
 }
 
-// NewRemote 创建 gRPC 远程模式客户端（连接独立部署的 Sentinel Server）
 func NewRemote(grpcAddr string, opts ...Option) (Client, error) {
 	o := defaultOptions()
 	o.grpcAddr = grpcAddr
 	for _, opt := range opts {
 		opt(o)
 	}
-
-	grpcConn, err := grpc.NewClient(
-		grpcAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
+	gc, err := grpc.NewClient(grpcAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
-
 	return &remoteClient{
-		conn:   grpcConn,
-		stub:   sentinelv1.NewSentinelServiceClient(grpcConn),
-		opts:   o,
-		logger: o.logger,
+		grpcConn:     gc,
+		sentinelStub: sentinelv1.NewSentinelServiceClient(gc),
+		mempoolStub:  sentinelv1.NewMempoolServiceClient(gc),
+		walletStub:   sentinelv1.NewWalletServiceClient(gc),
+		opts:         o,
+		logger:       o.logger,
 	}, nil
 }
 
 func (c *remoteClient) ScanBlock(ctx context.Context, blockNumber *big.Int, cfg ParserCfg) (*ScanResult, error) {
-	resp, err := c.stub.ScanBlock(ctx, &sentinelv1.ScanBlockRequest{
-		BlockNumber:       blockNumber.String(),
-		SelectedProtocols: parserCfgToProto(cfg),
+	resp, err := c.sentinelStub.ScanBlock(ctx, &sentinelv1.ScanBlockRequest{
+		BlockNumber: blockNumber.String(), SelectedProtocols: parserCfgToProto(cfg),
 	})
 	if err != nil {
 		return nil, err
 	}
 	bn := new(big.Int)
 	bn.SetString(resp.BlockNumber, 10)
-	return &ScanResult{
-		BlockNumber: bn,
-		TxCount:     int(resp.TxCount),
-		// Events 转换省略（需要实现 fromProtoEvent）
-	}, nil
+	return &ScanResult{BlockNumber: bn, TxCount: int(resp.TxCount)}, nil
 }
 
 func (c *remoteClient) ScanBlocks(ctx context.Context, start, end *big.Int, cfg ParserCfg) (<-chan *ScanResult, error) {
-	stream, err := c.stub.ScanBlocks(ctx, &sentinelv1.ScanBlocksRequest{
-		StartBlock:        start.String(),
-		EndBlock:          end.String(),
-		SelectedProtocols: parserCfgToProto(cfg),
-		WorkerPoolSize:    int32(c.opts.workerPoolSize),
+	stream, err := c.sentinelStub.ScanBlocks(ctx, &sentinelv1.ScanBlocksRequest{
+		StartBlock: start.String(), EndBlock: end.String(),
+		SelectedProtocols: parserCfgToProto(cfg), WorkerPoolSize: int32(c.opts.workerPoolSize),
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	out := make(chan *ScanResult, 10)
-	go func() {
-		defer close(out)
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				return
-			}
-			bn := new(big.Int)
-			bn.SetString(resp.BlockNumber, 10)
-			out <- &ScanResult{
-				BlockNumber: bn,
-				TxCount:     int(resp.TxCount),
-			}
-		}
-	}()
-	return out, nil
-}
-
-func (c *remoteClient) SubscribeBlocks(ctx context.Context, cfg ParserCfg) (<-chan *ScanResult, error) {
-	stream, err := c.stub.SubscribeBlocks(ctx, &sentinelv1.SubscribeRequest{
-		SelectedProtocols: parserCfgToProto(cfg),
-	})
-	if err != nil {
-		return nil, err
-	}
-
 	out := make(chan *ScanResult, 10)
 	go func() {
 		defer close(out)
@@ -288,16 +244,49 @@ func (c *remoteClient) SubscribeBlocks(ctx context.Context, cfg ParserCfg) (<-ch
 	return out, nil
 }
 
-func (c *remoteClient) Close() error {
-	return c.conn.Close()
+func (c *remoteClient) SubscribeBlocks(ctx context.Context, cfg ParserCfg) (<-chan *ScanResult, error) {
+	stream, err := c.sentinelStub.SubscribeBlocks(ctx, &sentinelv1.SubscribeRequest{SelectedProtocols: parserCfgToProto(cfg)})
+	if err != nil {
+		return nil, err
+	}
+	out := make(chan *ScanResult, 10)
+	go func() {
+		defer close(out)
+		for {
+			resp, err := stream.Recv()
+			if err != nil {
+				return
+			}
+			bn := new(big.Int)
+			bn.SetString(resp.BlockNumber, 10)
+			out <- &ScanResult{BlockNumber: bn, TxCount: int(resp.TxCount)}
+		}
+	}()
+	return out, nil
 }
 
-// ─────────────────────────────────────────────
-//  辅助：ParserCfg → proto selectors
-// ─────────────────────────────────────────────
+func (c *remoteClient) Mempool() *MempoolClient {
+	return &MempoolClient{mempoolStub: c.mempoolStub, chainID: c.opts.chainID, logger: c.logger}
+}
+
+func (c *remoteClient) Wallet() (*WalletClient, error) {
+	if c.opts.mnemonic == "" {
+		return nil, fmt.Errorf("sentinel: wallet requires mnemonic")
+	}
+	return &WalletClient{
+		mnemonic:   c.opts.mnemonic,
+		walletStub: c.walletStub,
+		chainID:    new(big.Int).SetUint64(c.opts.chainID),
+		logger:     c.logger,
+	}, nil
+}
+
+func (c *remoteClient) Close() error { return c.grpcConn.Close() }
+
+// ── Proto 转换 ────────────────────────────────
 
 func parserCfgToProto(cfg ParserCfg) []*sentinelv1.ProtocolSelector {
-	var selectors []*sentinelv1.ProtocolSelector
+	var out []*sentinelv1.ProtocolSelector
 	for pt, implCfg := range cfg {
 		for impl, methods := range implCfg {
 			sel := &sentinelv1.ProtocolSelector{
@@ -307,10 +296,10 @@ func parserCfgToProto(cfg ParserCfg) []*sentinelv1.ProtocolSelector {
 			for _, m := range methods {
 				sel.Events = append(sel.Events, internalMethodToProto(m))
 			}
-			selectors = append(selectors, sel)
+			out = append(out, sel)
 		}
 	}
-	return selectors
+	return out
 }
 
 func internalTypeToProto(pt comm.ProtocolType) sentinelv1.ProtocolType {

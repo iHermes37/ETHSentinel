@@ -7,6 +7,7 @@ import (
 	"net"
 
 	sentinelv1 "github.com/ETHSentinel/gen/sentinel/v1"
+	"github.com/ETHSentinel/internal/conn"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -16,20 +17,25 @@ import (
 
 // ServerConfig gRPC 服务配置
 type ServerConfig struct {
-	Addr string // 监听地址，如 ":50051"
+	Addr string
 }
 
 // Server gRPC 服务包装器
 type Server struct {
 	cfg        ServerConfig
 	grpcServer *grpc.Server
-	handler    *SentinelHandler
 	logger     *zap.Logger
 }
 
-// NewServer 创建 gRPC Server
-func NewServer(cfg ServerConfig, handler *SentinelHandler, logger *zap.Logger) *Server {
-	// 拦截器链：日志 → 恢复 → 认证（可扩展）
+// NewServer 创建并注册所有 gRPC 服务
+func NewServer(
+	cfg ServerConfig,
+	sentinel *SentinelHandler,
+	mempoolH *MempoolHandler,
+	walletH *WalletHandler,
+	_ *conn.MultiChainPool,
+	logger *zap.Logger,
+) *Server {
 	grpcSrv := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			LoggingUnaryInterceptor(logger),
@@ -41,25 +47,19 @@ func NewServer(cfg ServerConfig, handler *SentinelHandler, logger *zap.Logger) *
 		),
 	)
 
-	s := &Server{
-		cfg:        cfg,
-		grpcServer: grpcSrv,
-		handler:    handler,
-		logger:     logger,
-	}
+	sentinelv1.RegisterSentinelServiceServer(grpcSrv, sentinel)
+	sentinelv1.RegisterMempoolServiceServer(grpcSrv, mempoolH)
+	sentinelv1.RegisterWalletServiceServer(grpcSrv, walletH)
 
-	// 注册业务服务
-	sentinelv1.RegisterSentinelServiceServer(grpcSrv, handler)
-
-	// 注册健康检查
 	healthSrv := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(grpcSrv, healthSrv)
 	healthSrv.SetServingStatus("sentinel.v1.SentinelService", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthSrv.SetServingStatus("sentinel.v1.MempoolService", grpc_health_v1.HealthCheckResponse_SERVING)
+	healthSrv.SetServingStatus("sentinel.v1.WalletService", grpc_health_v1.HealthCheckResponse_SERVING)
 
-	// 注册反射（grpcurl / Evans 等工具使用）
 	reflection.Register(grpcSrv)
 
-	return s
+	return &Server{cfg: cfg, grpcServer: grpcSrv, logger: logger}
 }
 
 // Start 启动 gRPC 服务（阻塞）

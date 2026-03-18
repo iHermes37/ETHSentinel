@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package sentinel.v1;
+
+option go_package = "github.com/ETHSentinel/gen/sentinel/v1;sentinelv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─────────────────────────────────────────────
+//  Mempool 消息类型
+// ─────────────────────────────────────────────
+
+// PendingTxEvent pending 交易事件
+message PendingTxEvent {
+  string                    tx_hash    = 1;
+  string                    from       = 2;
+  string                    to         = 3;  // 空 = 合约部署
+  string                    value      = 4;  // wei string
+  string                    gas_price  = 5;
+  string                    gas_tip    = 6;  // EIP-1559
+  uint64                    gas_limit  = 7;
+  bytes                     input      = 8;  // input data
+  string                    chain_id   = 9;
+  google.protobuf.Timestamp seen_at    = 10;
+}
+
+// MempoolSubscribeRequest 订阅 mempool 请求
+message MempoolSubscribeRequest {
+  string         chain_id         = 1;  // "1"=ETH, "56"=BSC
+  repeated string watch_addresses = 2;  // 空 = 全部
+  repeated string method_sigs     = 3;  // 空 = 全部（前4字节hex，如 "0x38ed1739"）
+  string          min_value_wei   = 4;  // 最小 value 过滤
+  int64           min_gas_gwei    = 5;  // 最小 gasPrice 过滤
+}
+
+// MempoolStatsResponse mempool 统计
+message MempoolStatsResponse {
+  uint64 pending_count  = 1;
+  string avg_gas_gwei   = 2;
+  string chain_id       = 3;
+}
+
+// ─────────────────────────────────────────────
+//  MempoolService
+// ─────────────────────────────────────────────
+service MempoolService {
+  // 实时订阅 pending 交易（服务端流式）
+  rpc SubscribePending(MempoolSubscribeRequest) returns (stream PendingTxEvent);
+
+  // 获取当前 mempool 统计信息
+  rpc GetStats(MempoolSubscribeRequest) returns (MempoolStatsResponse);
+}

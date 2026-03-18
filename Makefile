@@ -1,12 +1,6 @@
-# ETH Sentinel SDK — Makefile
-
 MODULE := github.com/ETHSentinel
-PROTO_DIR := proto
+PROTO_DIR := server/proto
 GEN_DIR   := gen
-
-# ─────────────────────────────────────────────
-#  Proto 代码生成
-# ─────────────────────────────────────────────
 
 .PHONY: proto
 proto:
@@ -19,57 +13,27 @@ proto:
 		--go-grpc_out=$(GEN_DIR) \
 		--go-grpc_opt=paths=source_relative \
 		$(PROTO_DIR)/sentinel/v1/events.proto \
-		$(PROTO_DIR)/sentinel/v1/sentinel.proto
+		$(PROTO_DIR)/sentinel/v1/sentinel.proto \
+		$(PROTO_DIR)/sentinel/v1/mempool.proto \
+		$(PROTO_DIR)/sentinel/v1/wallet.proto
 	@echo ">>> Done: $(GEN_DIR)/sentinel/v1/"
-
-# ─────────────────────────────────────────────
-#  安装 protoc 插件（首次使用）
-# ─────────────────────────────────────────────
 
 .PHONY: install-tools
 install-tools:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-# ─────────────────────────────────────────────
-#  构建
-# ─────────────────────────────────────────────
-
 .PHONY: build
-build: proto
+build:
 	go build ./...
-
-.PHONY: build-server
-build-server:
-	go build -o bin/sentinel-server ./cmd/server
-
-# ─────────────────────────────────────────────
-#  测试
-# ─────────────────────────────────────────────
-
-.PHONY: test
-test:
-	go test ./... -race -count=1
-
-.PHONY: test-short
-test-short:
-	go test ./... -short -count=1
-
-# ─────────────────────────────────────────────
-#  代码质量
-# ─────────────────────────────────────────────
-
-.PHONY: lint
-lint:
-	golangci-lint run ./...
 
 .PHONY: tidy
 tidy:
 	go mod tidy
 
-# ─────────────────────────────────────────────
-#  运行
-# ─────────────────────────────────────────────
+.PHONY: test
+test:
+	go test ./... -race -count=1
 
 .PHONY: run-server
 run-server:
@@ -77,20 +41,12 @@ run-server:
 	ETH_WS_URL=$(ETH_WS_URL)   \
 	ETH_PROXY=$(ETH_PROXY)     \
 	GRPC_ADDR=:50051           \
-	go run ./cmd/server
+	go run ./test/server
 
 .PHONY: run-example
 run-example:
-	go run ./cmd/example
-
-# ─────────────────────────────────────────────
-#  Docker
-# ─────────────────────────────────────────────
-
-.PHONY: docker-build
-docker-build:
-	docker build -t eth-sentinel:latest .
+	go run ./test/example
 
 .PHONY: clean
 clean:
-	rm -rf bin/ $(GEN_DIR)/
+	rm -rf bin/ $(GEN_DIR)/sentinel/v1/*.pb.go

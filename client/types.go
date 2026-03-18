@@ -1,9 +1,4 @@
 package sentinel
 
-import "github.com/ETHSentinel/internal/parser/comm"
-
-// SwapData UniswapV2 Swap 详情（透出给 sentinel 调用方）
-type SwapData = comm.SwapData
-
-// TransferData ERC20/ETH 转账详情（透出给 sentinel 调用方）
-type TransferData = comm.TransferData
+// 此文件保留，用于未来扩展更多对外类型
+// SwapData 和 TransferData 已在 client.go 中通过类型别名透出

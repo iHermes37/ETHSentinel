@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package sentinel.v1;
+
+option go_package = "github.com/ETHSentinel/gen/sentinel/v1;sentinelv1";
+
+// ─────────────────────────────────────────────
+//  Wallet 消息类型
+// ─────────────────────────────────────────────
+
+// CreateWalletRequest 创建钱包请求
+message CreateWalletRequest {
+  string mnemonic  = 1; // 空 = 自动生成新助记词
+  string chain_id  = 2; // 默认 "1"（ETH 主网）
+}
+
+// CreateWalletResponse 创建钱包响应
+message CreateWalletResponse {
+  string mnemonic = 1; // 仅首次创建时返回，请妥善保存
+  string address  = 2; // 默认账户地址（index=0）
+}
+
+// DeriveAccountRequest 派生账户
+message DeriveAccountRequest {
+  string mnemonic     = 1;
+  uint32 account_index = 2; // 默认 0
+}
+
+message DeriveAccountResponse {
+  string address = 1;
+  string path    = 2; // 派生路径
+}
+
+// BalanceRequest 余额查询
+message BalanceRequest {
+  string address    = 1;
+  string chain_id   = 2;
+  string token_addr = 3; // 空 = 查 ETH 原生余额
+}
+
+message BalanceResponse {
+  string balance_wei = 1;
+  string symbol      = 2;
+}
+
+// SendTxRequest 发送交易
+message SendTxRequest {
+  string mnemonic       = 1;
+  uint32 account_index  = 2;
+  string to             = 3;
+  string value_wei      = 4;
+  bytes  data           = 5; // 合约调用 input data
+  string chain_id       = 6;
+  string gas_price_wei  = 7; // 空 = 自动
+  uint64 gas_limit      = 8; // 0 = 自动估算
+}
+
+message SendTxResponse {
+  string tx_hash = 1;
+}
+
+// SignMessageRequest 签名消息
+message SignMessageRequest {
+  string mnemonic       = 1;
+  uint32 account_index  = 2;
+  bytes  message        = 3;
+}
+
+message SignMessageResponse {
+  string signature = 1; // hex
+}
+
+// ─────────────────────────────────────────────
+//  WalletService
+// ─────────────────────────────────────────────
+service WalletService {
+  // 创建或导入钱包（返回地址，不持久化私钥）
+  rpc CreateWallet(CreateWalletRequest)     returns (CreateWalletResponse);
+  // 派生指定索引账户
+  rpc DeriveAccount(DeriveAccountRequest)   returns (DeriveAccountResponse);
+  // 查询余额
+  rpc GetBalance(BalanceRequest)            returns (BalanceResponse);
+  // 发送交易
+  rpc SendTransaction(SendTxRequest)        returns (SendTxResponse);
+  // 签名消息
+  rpc SignMessage(SignMessageRequest)       returns (SignMessageResponse);
+}
